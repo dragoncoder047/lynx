@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Lynx!</title>
+        <script
+            src="https://cdn.jsdelivr.net/gh/LIPS-scheme/lips@ad106451f8f8262b18a09d15d89d55eac4daaf5b/dist/lips.js"></script>
+        <script src="main.js" type="module"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="../lynx.css">
+    </head>
+
+    <body class="fullpage">
+        <div class="toolbar">
+            <h1 id="title" class="spacer">Lynx App</h1>
+            <div>
+                <button id="re-edit">Edit</button>
+            </div>
+        </div>
+        <div class="connect" id="connect-area"></div>
+        <div class="area">
+            <div id="app"></div>
+        </div>
+        <div id="log" class="terminal"></div>
+        <div id="nothingToSeeHere" style="display: none">
+            <p>This would be a <a href="../">Lynx</a> app, but no app to load was specified via the URL.</p>
+            <p>You can load an app via one of these three methods:</p>
+            <ol>
+                <li>In the <a href="../editor/">editor</a>, paste your app's code and
+                    press <kbd>Open Full Window</kbd>. This will put a base64-encoded and compressed version of your
+                    code into the URL hash, which you can then share with others or bookmark.
+                </li>
+                <li>In the <a href="../editor/">editor</a>, press <kbd>Save</kbd>
+                    and enter a name. This will store the code in the browser's local storage.
+                    Recall it here <form style="display: inline-block" action="." method="get"><input type="text"
+                            name="saved" placeholder="Saved app name"><input type="submit" value="Load it"></form>
+                    and then copy the URL once it loads. Note that this method only works
+                    on this device and this browser.
+                </li>
+                <li>Save your app's code somewhere else (such as <a href="https://gist.github.com"
+                        target="_blank">Github Gist</a>),
+                    then find the "raw" URL provided by the service. (For a Gist,
+                    the "raw" URL looks like
+                    <code>https://gist.githubusercontent.com/&lt;your username>/&lt;gist ID>/raw/&lt;revision SHA>/&lt;filename></code>.)
+                    Then load it here <form style="display: inline-block" action="." method="get"><input type="url"
+                            name="url" placeholder="URL to app source"><input type="submit" value="Load it"></form> and
+                    copy the URL once it loads.
+                </li>
+            </ol>
+        </div>
+    </body>
+
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Lynx Editor</title>
+        <script src="https://cdn.jsdelivr.net/gh/LIPS-scheme/lips@ad106451f8f8262b18a09d15d89d55eac4daaf5b/dist/lips.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/ace-builds@1/src-noconflict/ace.js"></script>
+        <script src="main.js" type="module"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="../lynx.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-builds@1/css/ace.css">
+    </head>
+
+    <body class="fullpage">
+        <h1>Lynx Editor</h1>
+        <div class="toolbar">
+            <div class="buttons">
+                <select id="projects"></select>
+                <button id="browse">Browse</button>
+            </div>
+            <div class="buttons">
+                <button id="run">Run</button>
+                <button id="save">Save</button>
+                <button id="save-url">Save to URL</button>
+                <button id="share">Share</button>
+                <button id="open-full">Full window</button>
+                <span class="spacer"></span>
+                <button id="help">Docs</button>
+            </div>
+        </div>
+        <div class="area">
+            <div id="editor"></div>
+            <iframe id="loader"></iframe>
+        </div>
+    </body>
+
+</html>

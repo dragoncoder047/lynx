@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Documentation | Lynx</title>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-scheme.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <link rel="stylesheet" href="../lynx.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="../mdAll.js" type="module"></script>
+    </head>
+
+    <body>
+        <main class="markdown">
+            # Lynx Documentation
+
+            * [Nodes Reference](./reference)
+            * [Examples](../examples)
+
+            ## File Format of a Flow
+
+            A Lynx file is formed of one or more [S-expressions](https://en.wikipedia.org/wiki/S-expression) that begin
+            with a datum type, and are followed by any number of other items that the datum type is defined to handle.
+
+            A Lynx flow is composed of nodes connected to each other. A node can be seen as a black box of sorts, that
+            takes in data through zero or more inputs, processes it in some way, and then sends it back out through zero
+            or more outputs. Notice I said *zero or more*: there can be nodes that have no inputs or no outputs (or even
+            no inputs *and* no outputs!) --- for example, the [`button`](./reference#node-button) node has no inputs to
+            the node itself because the whole purpose of the node is to watch for input from the user (i.e. clicking and
+            hovering the HTML `&lt;button>` that the node creates) and provide those events (via the outputs of the
+            node) to the rest of the flow.
+
+            Nodes' inputs and outputs are **typed**. This means that an input expecting a number can't be
+            connected to an output providing a string. Lynx will yell at you if you try to do this --- even if the
+            connection would have still worked if allowed.
+
+            ### Creating Nodes
+
+            Nodes can be created in two ways: named and inline.
+
+            A **named node definition** looks just like a normal top-level Scheme variable definition. For example, if
+            you wanted the node `myButton` to be a [`button`](./reference#node-button) displaying the text "Click me",
+            you would write it like this:
+
+            ```scheme
+            (define myButton (button "Click me"))
+            ```
+
+            The second way is by defining it inline in the chain, which is explained below.
+
+            ### Connecting Nodes
+
+            Nodes are connected by listing them in chains. Each chain is contained in one `(chain)` datum and is
+            composed of two or more nodes. The data flows from left to right through the chain, being transformed along
+            the way through the nodes' ports (inputs and outputs).
+
+            For example, to connect three nodes `foo`, `bar`, and `baz`, you can write:
+
+            ```scheme
+            (chain (foo) (bar) (baz))
+            ```
+
+            provided the types of the connected ports match.
+
+            This form only works if the nodes only have one output or input that can be connected -- if there are
+            multiple, Lynx won't know which one you're referring to and, rather than guess and run the risk of doing
+            something you didn't intend, Lynx will just yell at you. To specify which input or output you can add
+            symbols starting with `:` in-between the nodes with the names of the inputs or outputs:
+
+            ```scheme
+            (chain (foo) :output-name-from-foo :input-name-to-bar (bar))
+            ```
+
+            If one node has only one input or output that would make sense there (i.e. the only one with the right type)
+            you can omit that symbol, and Lynx will automatically figure out which one you are referring to. (But it's
+            good practice to always specify if there's multiple ports on that side of the node.)
+
+            ### Referencing other nodes
+
+            The simplest form of reference is to a named node. Simply write the name you gave it and then the rest of
+            the flow:
+
+            ```scheme
+            (define myNode (...))
+            (chain (foo) myNode (bar) ...)
+            ```
+
+            If the node you want to refer back to is a part of the same chain, you can also backreference it by node
+            type. Do this by writing `@` plus the type of the node, and Lynx will insert another reference to the most
+            recent instance of that node type here. This does not create another node of that type -- it references the
+            *same node*. This is useful for nodes that contain internal state and that have many inputs and outputs:
+
+            ```scheme
+            (chain (foo) :a (bar) @foo :b (baz))
+            ```
+
+            This will connect foo's "a" output to bar, then bar back into the same foo node, then foo's "b" output into
+            baz.
+
+            ### Blocking a connection
+
+            The `@` backreference is useful to refer to the same node multiple times, but if there are nodes on both
+            sides of the reference, Lynx will try to connect both an input and output, which may not be what you want.
+            To suppress connections between two adjacent nodes, write `~` in between them:
+
+            ```scheme
+            (chain (foo) :a (bar) ~ @foo :b (baz))
+            ```
+
+            This will connect foo's "a" output to bar, and the "b" output into baz, but won't connect bar back into foo.
+
+            ### Bussed ports
+
+            Some nodes have *bussed* ports, meaning that they can output a variable number of values simultaneously in
+            the form of an array. If you know the index in the array that you want to connect to, you can write the
+            index next to the node:
+
+            ```scheme
+            (chain (foo-bus) 1 :xx :yy (bar))
+            ```
+
+            This will connect index 1 of foo-bus's :xx output into the :yy input of bar.
+
+            If you try to connect a bussed port to a non-bussed port, without specifying a number, Lynx will yell at
+            you. If both the input and output are buses, you must specify two numbers (to connect only one line) or no
+            numbers (to connect all lines at once).
+
+            <!-- ## Custom Nodes and Features
+
+            TODO: implement and write this -->
+
+        </main>
+
+    </body>
+
+</html>

@@ -1,0 +1,7 @@
+(define *title* "Geolocation Test")
+(define *description* "A test of the <code>geolocation</code> feature. Logs your geolocation data every time it updates.")
+(define *category* "Testing")
+(chain (gps) :pos (log "Position updated! ")
+    ~ @gps :altitude (log "Altitude updated! ")
+    ~ @gps :heading (log "Heading updated! ")
+    ~ @gps :speed (log "Speed updated! "))

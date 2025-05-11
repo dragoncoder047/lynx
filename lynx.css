@@ -1,0 +1,184 @@
+/* theme */
+
+:root,
+button,
+select,
+input {
+    color: white;
+    background-color: black;
+    font-family: sans-serif;
+}
+
+button,
+select,
+input:not([type=range]) {
+    border: 1px solid white;
+    outline: none;
+
+    &:focus {
+        border-color: yellow;
+    }
+}
+
+a {
+    color: dodgerblue;
+
+    &:visited {
+        color: mediumpurple;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: lime;
+}
+
+/* full page ness */
+
+html:has(body.fullpage) {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+body.fullpage {
+    overflow: none;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.toolbar {
+    padding: 0.25rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.toolbar .buttons {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.area {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+}
+
+#editor,
+#loader {
+    flex: 1;
+}
+
+/* editor stuff */
+
+.lint-error {
+    text-decoration: underline wavy red;
+    background: #f007;
+}
+
+/* log at bottom of runner */
+
+.terminal {
+    white-space: pre-wrap;
+    font-family: monospace;
+    color-scheme: dark;
+    display: flex;
+    flex-direction: column;
+}
+
+.log::before {
+    color: gray;
+    content: '[' attr(data-timestamp) '] ';
+}
+
+.error {
+    color: red;
+}
+
+.error::before {
+    background-color: red;
+    content: 'ERROR';
+}
+
+.warning {
+    color: yellow;
+}
+
+.warning::before {
+    background-color: yellow;
+    content: 'WARNING'
+}
+
+.info {
+    color: dodgerblue;
+}
+
+.info::before {
+    background-color: dodgerblue;
+    content: 'INFO';
+}
+
+.warning::before,
+.error::before,
+.info::before {
+    position: relative;
+    display: inline-block;
+    padding: 0.25em;
+    text-align: center;
+    margin: 0.1em 0.5em 0.1em 0.1em;
+    padding: 0.1em;
+    color: black;
+}
+
+/* loading thingy */
+
+.connect:empty {
+    /* hide when empty */
+    display: none;
+}
+
+.connect:not(:empty)+.area {
+    /* hide main area when loading */
+    display: none;
+}
+
+/* examples list on main page */
+
+dt {
+    margin-top: 1em;
+}
+
+dd {
+    margin-left: 2em;
+}
+
+/* docs: tables */
+
+table,
+tr,
+th,
+td {
+    border-collapse: collapse;
+    border: 1px solid white;
+}
+
+th,
+td {
+    padding: 0.3em;
+}
+
+.indent {
+    margin-left: 2em;
+}
