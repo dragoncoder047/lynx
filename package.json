@@ -1,0 +1,26 @@
+{
+    "name": "lynx",
+    "version": "0.0.1",
+    "description": "Node-based app creation tool",
+    "main": "src/main.js",
+    "scripts": {
+        "build": "node build.mjs",
+        "dev:build": "node build.mjs -w",
+        "dev:serve": "python3 -m http.server",
+        "dev": "pnpm run \"/^dev:.*/\"",
+        "lint": "tsc"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "GPL-3.0-only",
+    "packageManager": "pnpm@10.10.0",
+    "devDependencies": {
+        "esbuild": "^0.25.0",
+        "typescript": "^5.6.2"
+    },
+    "dependencies": {
+        "@jcubic/lips": "github:jcubic/lips#876af5394f85e7b720f9a62545c19864bc1fe409",
+        "ace-builds": "^1.4.12"
+    },
+    "type": "module"
+}

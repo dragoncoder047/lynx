@@ -1,4 +1,4 @@
-import { NODES, FEATURES, modulesReady } from '../../nodes/all.js';
+import { NODES, FEATURES, modulesReady } from '../nodes/all.js';
 import { get, make, html } from '../../common/html.js';
 import { NodeDef } from '../../common/nodeDef.js';
 import { Feature } from '../../common/feature.js';

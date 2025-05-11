@@ -1,6 +1,6 @@
 import { LynxFlow } from '../common/flow.js';
 import { LynxError, LynxMultiError, parseWithMetadata } from '../common/utils.js';
-import { loadAllNodes } from '../nodes/all.js';
+import { loadAllNodes } from '../../nodes/all.js';
 
 /**
  * @param {string} source

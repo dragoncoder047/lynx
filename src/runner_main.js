@@ -1,7 +1,7 @@
-import { LynxFlow } from "../common/flow.js";
-import { autoload } from '../common/autoload.js';
-import { get, make, toError } from '../common/html.js';
-import { isEmbedded, LynxMultiError } from '../common/utils.js';
+import { LynxFlow } from "./common/flow.js";
+import { autoload } from './common/autoload.js';
+import { get, make, toError } from './common/html.js';
+import { isEmbedded, LynxMultiError } from './common/utils.js';
 import { loadAllNodes } from '../nodes/all.js';
 
 if (isEmbedded()) {

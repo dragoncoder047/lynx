@@ -4,7 +4,7 @@ import { AUTOSAVE_KEY, LOCAL_SAVE_KEY, LYNX_FILE_EXT } from '../common/constants
 import { get, make } from '../common/html.js';
 import { bytesToBase64 } from '../common/utils.js';
 import { EXAMPLES } from '../examples/examples.js';
-import { magic } from './lint.js';
+import { magic } from '../../editor/lint.js';
 
 populateProjects();
 

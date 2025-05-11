@@ -1,5 +1,5 @@
-import { LYNX_FILE_EXT, ONLINE_EXAMPLES_GH_ENDPOINT } from '../common/constants.js';
-import { getMeta } from '../common/getMetadata.js';
+import { LYNX_FILE_EXT, ONLINE_EXAMPLES_GH_ENDPOINT } from './common/constants.js';
+import { getMeta } from './common/getMetadata.js';
 
 export const EXAMPLES = [];
 
