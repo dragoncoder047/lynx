@@ -2,7 +2,7 @@ import * as ace from "ace-builds";
 import { bind, get, make } from "vanilla";
 import { autoloadString } from "../common/autoload";
 import { compress } from "../common/compress";
-import { AUTOSAVE_KEY, LOCAL_SAVE_KEY, LYNX_FILE_EXT } from "../common/constants";
+import { AUTOSAVE_KEY, LOCAL_SAVE_KEY } from "../common/constants";
 import { bytesToBase64 } from "../common/utils";
 import { EXAMPLES } from "../examples";
 import { lint } from "./lint";
@@ -12,11 +12,16 @@ populateProjects();
 ace.config.set("basePath", "https://cdn.jsdelivr.net/npm/ace-builds@1/src-noconflict/");
 
 const editor = ace.edit("editor", {
-    theme: "ace/theme/clouds_midnight",
+    // theme: "ace/theme/clouds_midnight",
     mode: "ace/mode/scheme",
 });
+editor.setTheme({
+    cssClass: "ace-lynx",
+    isDark: true
+});
+editor.commands.removeCommand("showSettingsMenu", false);
 editor.session.setOption("wrap", "free");
-const changeText: ((text: string) => void) & { isRunning: boolean } = function(text: string) {
+const changeText: ((text: string) => void) & { isRunning: boolean } = function (text: string) {
     changeText.isRunning = true;
     try {
         editor.setValue(text, -1);

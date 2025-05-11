@@ -74,3 +74,6 @@ featuresContainer.append(dl);
 for (var [id, feature] of FEATURES.sort()) {
     docFeature(id, feature, dl as HTMLDListElement, featuresByNodesUsing[id]!);
 }
+
+// compensate for the hash not existing when the page loads initially
+get(window.location.hash)?.scrollIntoView();
