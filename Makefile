@@ -23,4 +23,4 @@ lint:
 	tsc
 
 watch:
-	pnpm npm-watch build
+	pnpm nodemon -e ts --exec make build

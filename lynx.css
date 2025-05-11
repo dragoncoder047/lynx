@@ -58,12 +58,12 @@ body.fullpage {
     padding: 0.25rem;
     display: flex;
     flex-direction: row;
-}
 
-.toolbar .buttons {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
+    & .buttons {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+    }
 }
 
 .spacer {
@@ -83,9 +83,10 @@ body.fullpage {
 
 /* editor stuff */
 
-.lint-error {
-    text-decoration: underline wavy red;
+.ace_editor .lint-error {
     background: #f007;
+    position: absolute;
+    width: 100%;
 }
 
 /* log at bottom of runner */
@@ -100,39 +101,12 @@ body.fullpage {
 
 .log::before {
     color: gray;
-    content: '[' attr(data-timestamp) '] ';
+    content: "[" attr(data-timestamp) "] ";
+    user-select: all;
 }
 
-.error {
-    color: red;
-}
-
-.error::before {
-    background-color: red;
-    content: 'ERROR';
-}
-
-.warning {
-    color: yellow;
-}
-
-.warning::before {
-    background-color: yellow;
-    content: 'WARNING'
-}
-
-.info {
-    color: dodgerblue;
-}
-
-.info::before {
-    background-color: dodgerblue;
-    content: 'INFO';
-}
-
-.warning::before,
-.error::before,
-.info::before {
+:is(.error, .warning, .info)::before {
+    user-select: all;
     position: relative;
     display: inline-block;
     padding: 0.25em;
@@ -140,6 +114,34 @@ body.fullpage {
     margin: 0.1em 0.5em 0.1em 0.1em;
     padding: 0.1em;
     color: black;
+}
+
+.error {
+    color: red;
+
+    &::before {
+        content: "ERROR";
+        background-color: red;
+    }
+}
+
+
+.warning {
+    color: yellow;
+
+    &::before {
+        background-color: yellow;
+        content: "WARNING";
+    }
+}
+
+.info {
+    color: dodgerblue;
+
+    &::before {
+        background-color: dodgerblue;
+        content: "INFO";
+    }
 }
 
 /* loading thingy */

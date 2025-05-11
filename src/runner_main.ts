@@ -1,6 +1,6 @@
 import { LynxFlow } from "./common/flow";
 import { autoload } from "./common/autoload";
-import { isEmbedded, LynxMultiError, toError } from "./common/utils";
+import { isEmbedded, LynxMultiError, onlyWorstErrors, toError } from "./common/utils";
 import { loadAllNodes } from "./nodes/all";
 import { bind, get, html, make } from "vanilla";
 
@@ -39,7 +39,7 @@ try {
     }
 } catch (e: any) {
     if (e instanceof LynxMultiError) {
-        for (var ee of e.subErrors) {
+        for (var ee of onlyWorstErrors(e.subErrors)) {
             console.error(ee);
             app.addUI(toError("Init error: ", ee));
         }

@@ -1,9 +1,10 @@
 import * as ace from "ace-builds";
 import { LynxFlow } from "../common/flow";
-import { LynxError, LynxMultiError, parseWithMetadata } from "../common/utils";
+import { LynxError, LynxMultiError, onlyWorstErrors, parseWithMetadata } from "../common/utils";
 import { loadAllNodes } from "../nodes/all";
 import { LynxNode } from "../common/node";
-export async function magic(source: string, editSession: ace.EditSession) {
+
+export async function lint(source: string, editSession: ace.EditSession) {
     const app = new LynxFlow(null, null, null, null);
     await loadAllNodes(app);
     const errors = [];
@@ -25,35 +26,30 @@ export async function magic(source: string, editSession: ace.EditSession) {
 
 function showLint(editSession: ace.EditSession, errors: LynxError[]) {
     // find only highest priority errors
-    const maxSev = Math.max(...errors.map(e => e.severity ?? 0));
-    const onlySev = errors || errors.filter(e => (e.severity ?? 0) === maxSev);
+    const onlySev = onlyWorstErrors(errors);
     // show lint errors
     editSession.clearAnnotations();
-    editSession.setAnnotations(onlySev.map(e => {
+    editSession.setAnnotations(onlySev.map(err => {
         return {
-            row: e.line - 1,
-            column: e.col,
-            text: e.message || `${e.line}:${e.col} ${e.message}`,
-            type: "error"
+            row: err.line - 1,
+            column: err.col,
+            text: err.message ?? `${err.line}:${err.col}(${err.len}) ${err.message}`,
+            type: "error",
         };
     }));
-    // TODO: this doesn't work
-    editSession.getMarkers;
-    editSession.removeMarker;
-    editSession.addMarker
-    editSession.state.diagnosticMarkers.setMarkers(onlySev.map(e => {
-        return {
-            range: new ace.Range(e.line - 1, e.col, e.line - 1, e.col + e.len),
-            tooltipText: e.message,
-            className: "lint-error"
-        };
-    }));
+    const markers = editSession.getMarkers();
+    for (var id of Object.keys(markers)) {
+        editSession.removeMarker(+id);
+    }
+    const seenMarkers = new Set<string>;
+    for (var err of onlySev) {
+        const marker = new ace.Range(err.line - 1, err.col, err.line - 1, err.col + Math.min(1, err.len));
+        if (seenMarkers.has(marker.toString())) continue;
+        seenMarkers.add(marker.toString());
+        editSession.addMarker(marker, "lint-error", "line");
+    }
 }
 
-/**
- * @param {ace.EditSession} editSession
- * @param {LynxNode[]} nodes
- */
 function highlightNodes(editSession: ace.EditSession, nodes: LynxNode[]) {
 
 }

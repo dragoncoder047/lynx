@@ -5,7 +5,7 @@ import { compress } from "../common/compress";
 import { AUTOSAVE_KEY, LOCAL_SAVE_KEY, LYNX_FILE_EXT } from "../common/constants";
 import { bytesToBase64 } from "../common/utils";
 import { EXAMPLES } from "../examples";
-import { magic } from "./lint";
+import { lint } from "./lint";
 
 populateProjects();
 
@@ -30,7 +30,7 @@ editor.on("change", async () => {
         changeURL("", "");
     }
     // do linting
-    await magic(editor.getValue(), editor.getSession());
+    await lint(editor.getValue(), editor.getSession());
 });
 changeText(await autoloadString());
 
@@ -72,7 +72,7 @@ bind("#share", "click", async () => {
         url: new URL("../runner#" + await getCompressed(), location.href) as any,
         text: editor.getValue(),
         title: "Lynx App",
-        files: [new File([editor.getValue()], "app" + LYNX_FILE_EXT)]
+        // files: [new File([editor.getValue()], "app" + LYNX_FILE_EXT)]
     });
 });
 

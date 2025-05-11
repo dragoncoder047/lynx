@@ -1,5 +1,5 @@
 import { make } from "vanilla";
-import { env, LNumber, LString, LSymbol, Pair, parse, Parser, WithMetadata } from "../lipsShim";
+import { env, LNumber, LString, LSymbol, Pair, parse, FixedParser, WithMetadata } from "../lipsShim";
 import { Color, Point } from "./otherTypes";
 import { Bus, Port } from "./port";
 
@@ -73,29 +73,10 @@ export async function walk(tree: Pair, cb: (value: any) => Promise<any>) {
 
 
 export class LynxError extends Error {
-    /**
-     * @type number
-     */
-    line: number
-    /**
-     * @type number
-     */
-    col: number
-    /**
-     * @type number
-     */
-    len: number
-    /**
-     * @type number
-     */
-    severity: number
-    /**
-     * @param {string} message
-     * @param {number} severity
-     * @param {number} line
-     * @param {number} col
-     * @param {number} len
-     */
+    line: number;
+    col: number;
+    len: number;
+    severity: number;
     constructor(message: string, severity: number, line: number, col: number, len: number = 1) {
         super(message);
         this.severity = severity;
@@ -107,7 +88,7 @@ export class LynxError extends Error {
 }
 
 export class LynxMultiError extends Error {
-    subErrors: LynxError[]
+    subErrors: LynxError[];
     constructor(subErrors: LynxError[]) {
         super();
         this.subErrors = subErrors;
@@ -132,9 +113,15 @@ export function throwPosError(message: string, offending: WithMetadata, severity
 }
 
 export async function parseWithMetadata(source: string): Promise<Pair[]> {
-    const parser = new Parser({ env, meta: true });
+    const parser = new FixedParser({ env, meta: true });
     parser.prepare(source);
     return await parse(parser);
+}
+
+export function onlyWorstErrors(errors: LynxError[]): LynxError[] {
+    const maxSev = Math.max(...errors.map(e => e.severity ?? 0));
+    const onlySev = errors.filter(e => (e.severity ?? 0) === maxSev);
+    return onlySev;
 }
 
 export function isEmbedded(): boolean {

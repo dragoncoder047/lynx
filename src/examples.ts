@@ -1,6 +1,6 @@
-import { parse } from "./lipsShim";
 import { LYNX_FILE_EXT, ONLINE_EXAMPLES_GH_ENDPOINT } from "./common/constants";
 import { getMeta, Metadata } from "./common/getMetadata";
+import { parseWithMetadata } from "./common/utils";
 
 export type Example = {
     filename: string;
@@ -46,7 +46,7 @@ for (var filename of files) {
         { cache: "reload" })
         .then(resp => resp.text())
         // .then(text => (console.log(text), text))
-        .then(text => parse(text))
+        .then(text => parseWithMetadata(text))
         .then(forms => getMeta(forms));
     if (meta.hidden) continue;
     EXAMPLES.push({ filename, id, ...meta });
