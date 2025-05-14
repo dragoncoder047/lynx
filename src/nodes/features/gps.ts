@@ -1,5 +1,5 @@
 import { Feature } from "../../common/feature";
-import { Port } from "../../common/port";
+import { Port } from "../../common/nodeDef";
 import { defFeature, defNode } from "../all";
 import { Point } from "../../common/otherTypes";
 
@@ -22,15 +22,14 @@ defFeature("geolocation", new Feature(async () => {
 
 defNode({
     id: "gps",
-    inputs: [],
+    inputs: {},
     features: ["geolocation"],
-    argTypes: [],
-    outputs: [
-        new Port("pos", "point"),
-        new Port("altitude", "number"),
-        new Port("heading", "number"),
-        new Port("speed", "number"),
-    ],
+    outputs: {
+        pos: new Port("point", new Point(undefined as any, undefined as any)),
+        altitude: new Port("number", 0),
+        heading: new Port("number", 0),
+        speed: new Port("number", 0),
+    },
     doc: `Watches your device's GPS position and outputs position and movement data.
     <br>The point that <code>gps</code> sends for :pos is of the form <code>{x: longitude, y: latitude}</code>.
     <br>Altitude, heading, and speed may not be available depending on your device.`,

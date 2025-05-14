@@ -12,7 +12,6 @@ populateProjects();
 ace.config.set("basePath", "https://cdn.jsdelivr.net/npm/ace-builds@1/src-noconflict/");
 
 const editor = ace.edit("editor", {
-    // theme: "ace/theme/clouds_midnight",
     mode: "ace/mode/scheme",
 });
 editor.setTheme({
@@ -46,9 +45,15 @@ bind("#browse", "click", () => {
     open(import.meta.resolve("../examples"), "_blank");
 });
 
-bind("#run", "click", async () => {
+async function run() {
     runIframe.src = "../runner#" + await getCompressed();
-});
+}
+bind("#run", "click", run);
+editor.commands.addCommand({
+    name: "runApp",
+    bindKey: { mac: "Cmd+S|Cmd+R", win: "Ctrl+S|Ctrl+R" },
+    exec: run,
+})
 
 bind("#save-url", "click", async () => {
     changeURL("", "#" + await getCompressed());

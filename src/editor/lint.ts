@@ -1,6 +1,7 @@
 import * as ace from "ace-builds";
 import { LynxFlow } from "../common/flow";
-import { LynxError, LynxMultiError, onlyWorstErrors, parseWithMetadata } from "../common/utils";
+import { parseWithMetadata } from "../common/utils";
+import { LynxError, LynxMultiError, onlyWorstErrors } from "../common/errors";
 import { loadAllNodes } from "../nodes/all";
 import { LynxNode } from "../common/node";
 
@@ -43,7 +44,7 @@ function showLint(editSession: ace.EditSession, errors: LynxError[]) {
     }
     const seenMarkers = new Set<string>;
     for (var err of onlySev) {
-        const marker = new ace.Range(err.line - 1, err.col, err.line - 1, err.col + Math.min(1, err.len));
+        const marker = new ace.Range(err.line - 1, err.col, err.line - 1, err.col + Math.max(1, err.len));
         if (seenMarkers.has(marker.toString())) continue;
         seenMarkers.add(marker.toString());
         editSession.addMarker(marker, "lint-error", "line");

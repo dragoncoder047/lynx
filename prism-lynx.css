@@ -1,0 +1,89 @@
+:is(code, pre)[class*="language-"] {
+    color: white;
+    background: none;
+    font-family: "Fira Code", "Consolas", monospace;
+    text-align: left;
+    white-space: pre;
+    word-wrap: none;
+
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+
+}
+
+.token {
+
+    &.comment,
+    &.block-comment,
+    &.prolog,
+    &.doctype,
+    &.cdata {
+        color: #777;
+        font-style: italic;
+    }
+
+    &.tag,
+    &.attr-name,
+    &.namespace,
+    &.deleted {
+        color: lime;
+    }
+
+    &.function-name {
+        color: #6196cc;
+    }
+
+    &.boolean,
+    &.number,
+    &.function {
+        color: magenta;
+    }
+
+    &.property,
+    &.class-name,
+    &.constant,
+    &.symbol {
+        color: #f8c555;
+    }
+
+    &.selector,
+    &.important,
+    &.atrule,
+    &.keyword,
+    &.builtin {
+        color: lime;
+    }
+
+    &.string,
+    &.char,
+    &.attr-value,
+    &.regex,
+    &.variable {
+        color: dodgerblue;
+    }
+
+    &.operator,
+    &.entity,
+    &.url {
+        color: #666;
+    }
+
+    &.important,
+    &.bold {
+        font-weight: bold;
+    }
+
+    &.italic {
+        font-style: italic;
+    }
+
+    &.inserted {
+        color: green;
+    }
+}

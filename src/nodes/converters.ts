@@ -1,24 +1,33 @@
-import { Port } from "../common/port";
+import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
     id: "string->number",
-    argTypes: [],
-    inputs: [new Port("string", "string")],
-    outputs: [new Port("number", "number")],
-    doc: "Receives a string representing a number, parses it as a number, and outputs that.",
+    inputs: {
+        string: new Port("string", "")
+    },
+    outputs: {
+        number: new Port("number", 0),
+    },
+    doc: `Receives a string representing a number, parses it as a number, and
+    outputs that. It uses <code>parseFloat</code> so if you give it a non-number
+    string like <code>akjgsd78</code> you will just get 0.`, // cSpell: ignore akjgsd
     update({ node, changes }) {
-        node.output("number", parseFloat(changes.string));
+        node.output("number", parseFloat(changes.string!.toString()));
     }
 });
 
 defNode({
     id: "to-string",
-    argTypes: [],
-    inputs: [new Port("what", "any")],
-    outputs: [new Port("stringified", "string")],
-    doc: "Receives any object and converts it to a string using the Javascript <code>toString()</code> method.",
+    inputs: {
+        what: new Port("any", undefined),
+    },
+    outputs: {
+        stringified: new Port("string", ""),
+    },
+    doc: `Receives any object and converts it to a string using the Javascript
+    <code>toString()</code> method.`,
     update({ node, changes }) {
-        node.output("stringified", changes.what.toString());
+        node.output("stringified", changes.what!.toString());
     }
 });

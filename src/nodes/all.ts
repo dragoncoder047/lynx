@@ -1,6 +1,7 @@
-import { LynxFlow } from "../common/flow";
 import { Feature } from "../common/feature";
+import { LynxFlow } from "../common/flow";
 import { NodeDef } from "../common/nodeDef";
+import { Generic } from "../common/types";
 
 export const modulesReady = Promise.all([
     import("./flow"),
@@ -28,8 +29,8 @@ export async function loadAllNodes(app: LynxFlow) {
     console.log(app.nodeDefs, app.features);
 }
 
-export function defNode(node: NodeDef) {
-    NODES.push(node);
+export function defNode<IPN extends string, OPN extends string, G extends Generic, SK extends string>(node: NodeDef<IPN, OPN, G, SK>) {
+    NODES.push(node as any);
 }
 
 export function defFeature(name: string, feat: Feature) {

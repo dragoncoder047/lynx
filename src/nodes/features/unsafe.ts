@@ -1,29 +1,42 @@
 import { make } from "vanilla";
 import { Feature } from "../../common/feature";
-import { Bus } from "../../common/port";
+import { Bus } from "../../common/nodeDef";
 import { consToArray } from "../../common/utils";
 import { env, exec, LSymbol, nil, Pair } from "../../lipsShim";
 import { defFeature, defNode } from "../all";
 
 defFeature("unsafe-code", new Feature(async app => {
     const btn = make("button", {}, "Yes, run");
-    const area = make("div", {}, "This flow runs arbitrary code. Please confirm you want to run it: ", btn);
+    const area = make("div", {}, "This flow runs arbitrary code. ",
+                                "Please confirm you want to run it: ", btn);
     app.addConnect(area);
     await new Promise<void>(r => {
         btn.addEventListener("click", () => r());
     });
 }, {
-    doc: "Used by nodes that have access to all of Javascript, meaning that they could do just about anything, including executing malicious code. This feature forces the user to confirm they want to run the flow first before anything happens."
+    doc: `Used by nodes that have access to all of Javascript, meaning that
+    they could do just about anything, including executing malicious code.
+    This feature forces the user to confirm they want to run the flow first
+    before anything happens.`
 }));
 
 
 defNode({
     id: "fn",
-    inputs: [new Bus("inputs", "any")],
-    outputs: [new Bus("outputs", "any")],
+    inputs: {
+        inputs: new Bus("any", []),
+    },
+    outputs: {
+        outputs: new Bus("any", []),
+    },
     features: ["unsafe-code"],
-    doc: "Transforms the input and output values using a Scheme function. The value of the inputs is available in the variable <code>$inputs</code> (JS <code>undefined</code>), and the node object is available in the variable <code>$node</code>. Whatever array the function returns will be passed to the output. If <code>#&lt;void></code> is returned, the node will not update its outputs.",
-    async setup({ node, params, features }) {
+    doc: `Transforms the input and output values using a Scheme function.
+    The value of the inputs is available in the variable <code>$inputs</code>,
+    and the node object is available in the variable <code>$node</code>.
+    Whatever array the function returns will be passed to the output.
+    If <code>#&lt;void></code> (JS <code>undefined</code>) is returned,
+    the node will not update its outputs.`,
+    async setup({ node, features }) {
         const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a: any, d: any) => new Pair(a, d);

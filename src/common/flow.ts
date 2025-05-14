@@ -45,7 +45,12 @@ export class LynxFlow {
     async run(nodes: LynxNode[]): Promise<never> {
         console.log("Running nodes", nodes);
         for (; ;) {
-            await Promise.all(nodes.map(node => node.tick(this)));
+            const iter = await Promise.allSettled(nodes.map(node => node.tick(this)));
+            for (var res of iter) {
+                if (res.status === "rejected") {
+                    console.error(res.reason);
+                }
+            }
             // to prevent a total lockup
             await new Promise(r => setTimeout(r, 0));
         }

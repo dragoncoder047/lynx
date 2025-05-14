@@ -23,4 +23,4 @@ lint:
 	tsc
 
 watch:
-	pnpm nodemon -e ts --exec make build
+	pnpm nodemon -e ts,mjs --exec "make build || exit 1"

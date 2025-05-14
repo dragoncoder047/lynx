@@ -5,7 +5,6 @@
         <title>Documentation | Lynx</title>
         <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-scheme.min.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css">
         <link rel="stylesheet" href="../lynx.css">
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script src="../build/mdAll.js" type="module"></script>
@@ -82,9 +81,12 @@
             the flow:
 
             ```scheme
-            (define myNode (...))
-            (chain (foo) myNode (bar) ...)
+            (define myNode (bar))
+            (chain (foo) myNode (baz))
             ```
+
+            This will create a foo node, connect it to the bar node called myNode, and then create a baz node and
+            connect myNode to it.
 
             If the node you want to refer back to is a part of the same chain, you can also backreference it by node
             type. Do this by writing `@` plus the type of the node, and Lynx will insert another reference to the most
@@ -92,11 +94,11 @@
             *same node*. This is useful for nodes that contain internal state and that have many inputs and outputs:
 
             ```scheme
-            (chain (foo) :a (bar) @foo :b (baz))
+            (chain (foo) :a (bar) @foo :b :c (baz))
             ```
 
-            This will connect foo's "a" output to bar, then bar back into the same foo node, then foo's "b" output into
-            baz.
+            This will connect foo's "a" output to bar or foo to bar's "a" input (depending on the types of the ports),
+            then bar back into the same foo node, then foo's "b" output into baz's "c" input.
 
             ### Blocking a connection
 
@@ -108,7 +110,7 @@
             (chain (foo) :a (bar) ~ @foo :b (baz))
             ```
 
-            This will connect foo's "a" output to bar, and the "b" output into baz, but won't connect bar back into foo.
+            This will connect foo to bar, and the same foo to baz, but won't connect bar back into foo.
 
             ### Bussed ports
 

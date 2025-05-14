@@ -1,5 +1,6 @@
 /* theme */
 @import url(ace-lynx.css);
+@import url(prism-lynx.css);
 
 :root,
 button,
@@ -80,6 +81,8 @@ body.fullpage {
 #editor,
 #loader {
     flex: 1;
+    border: 1px solid white;
+    border-collapse: collapse;
 }
 
 /* editor stuff */
@@ -103,11 +106,9 @@ body.fullpage {
 .log::before {
     color: gray;
     content: "[" attr(data-timestamp) "] ";
-    user-select: all;
 }
 
 :is(.error, .warning, .info)::before {
-    user-select: all;
     position: relative;
     display: inline-block;
     padding: 0.25em;
@@ -184,4 +185,8 @@ td {
 
 .indent {
     margin-left: 2em;
+}
+
+:not(a, h1, h2, h3, h4, h5, h6)>code {
+    color: lightgreen;
 }

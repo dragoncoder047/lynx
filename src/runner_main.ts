@@ -1,6 +1,7 @@
 import { LynxFlow } from "./common/flow";
 import { autoload } from "./common/autoload";
-import { isEmbedded, LynxMultiError, onlyWorstErrors, toError } from "./common/utils";
+import { isEmbedded } from "./common/utils";
+import { LynxMultiError, onlyWorstErrors, toError } from "./common/errors";
 import { loadAllNodes } from "./nodes/all";
 import { bind, get, html, make } from "vanilla";
 

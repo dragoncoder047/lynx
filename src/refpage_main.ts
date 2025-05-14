@@ -1,24 +1,32 @@
 import { get, html, make } from "vanilla";
 import { Feature } from "./common/feature";
-import { NodeDef } from "./common/nodeDef";
-import { Bus } from "./common/port";
+import { Bus, NodeDef } from "./common/nodeDef";
+import { env } from "./lipsShim";
 import { FEATURES, modulesReady, NODES } from "./nodes/all";
+import { repr } from "./common/utils";
 
 await modulesReady;
 
 const featuresContainer = get("#features-container")!;
 const nodesContainer = get("#nodes-container")!;
 
+const FEATURE_ID_PREFIX = "feat-";
+const NODE_ID_PREFIX = "node-";
+
 function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Set<string>>) {
     const li = make("li");
     list.append(li);
-    li.append(make("p", {}, make("code", {}, 
-        "(", def.id,
-        ...(def.argTypes ? def.argTypes.map(x => make("em", {}, ` <${x}>`)) : [" ..."]),
-        ")",
-    )));
+    li.append(make("p", {},
+        make("code", {},
+            "(", def.id,
+            ...Object.entries(def.inputs).flatMap(([name, val]) => val.paramOnly ? [` :${name} <${val.type}>`] : []),
+            ")")));
     if (def.features) {
-        li.append(make("p", {}, "Uses features ", ...def.features.flatMap(f => [", ", make("a", { href: "#feature-" + encodeURIComponent(f) }, make("strong", {}, make("em", {}, make("code", {}, f))))].slice(1))));
+        li.append(make("p", {},
+            "Uses features ", ...def.features.flatMap(f => [", ",
+                make("a", { href: `#${FEATURE_ID_PREFIX}${encodeURIComponent(f)}` },
+                    make("strong", {}, make("em", {},
+                        make("code", {}, f))))].slice(1))));
         for (var f of def.features) {
             fStore[f] ??= new Set;
             fStore[f]!.add(def.id);
@@ -29,15 +37,23 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
     const iRow = make("tr", {}, make("th", {}, "Inputs"));
     const oRow = make("tr", {}, make("th", {}, "Outputs"));
     ioTab.append(iRow, oRow);
-    for (var input of def.inputs) {
-        const t = def.generics && input.type as any in def.generics ? `type of argument ${def.generics[input.type as any]}` : input.type;
-        const b = input instanceof Bus ? ", bussed" : "";
-        iRow.append(make("td", {}, ":", input.name, " (", t as string, b, ")"));
+    for (let [input, port] of Object.entries(def.inputs)) {
+        const b = port instanceof Bus ? ", bussed" : "";
+        iRow.append(make("td", {},
+            make("div", {},
+                make("code", {}, ":", input),
+                " (", port.type as string, b, ")"),
+            ...(port.type === "signal" ? [] : [make("div", {},
+                "default: ", make("code", {}, repr(port.initialVal).toString()))])));
     }
-    for (var output of def.outputs) {
-        const t = def.generics && output.type as any in def.generics ? `type of argument ${def.generics[output.type as any]}` : output.type;
-        const b = output instanceof Bus ? ", bussed" : "";
-        oRow.append(make("td", {}, ":", output.name, " (", t as string, b, ")"));
+    for (let [output, port] of Object.entries(def.outputs)) {
+        const b = port instanceof Bus ? ", bussed" : "";
+        oRow.append(make("td", {},
+            make("div", {},
+                make("code", {}, ":", output),
+                " (", port.type as string, b, ")"),
+            ...(port.type === "signal" ? [] : [make("div", {},
+                "default: ", make("code", {}, repr(port.initialVal).toString()))])));
     }
     if (def.doc) {
         li.append(make("p", {}, html(def.doc)));
@@ -47,7 +63,8 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
 const nodesById = Object.groupBy(NODES, x => x.id);
 const featuresByNodesUsing: Record<string, Set<string>> = {};
 for (var id of Object.keys(nodesById).sort()) {
-    nodesContainer.append(make("h3", { id: "node-" + id }, make("code", {}, id)));
+    nodesContainer.append(make("h3", { id: NODE_ID_PREFIX + id },
+        make("code", {}, id)));
     const ul = make("ul") as HTMLUListElement;
     nodesContainer.append(ul);
     for (var variant of nodesById[id]!) {
@@ -64,8 +81,13 @@ for (var id of Object.keys(nodesById).sort()) {
  * @param {Set<string>} usedBy
  */
 function docFeature(id: string, feat: Feature, el: HTMLDListElement, usedBy: Set<string> = new Set) {
-    const dt = make("dt", { id: "feature-" + id }, make("h3", {}, make("code", {}, id)));
-    const dl = make("dd", {}, make("p", {}, make("em", {}, "Used by: ", ...Array.from(usedBy).flatMap(f => [", ", make("a", { href: "#node-" + encodeURIComponent(f) }, make("code", {}, f))]).slice(1))), make("p", {}, html(feat.doc!)));
+    const dt = make("dt", { id: FEATURE_ID_PREFIX + id }, make("h3", {}, make("code", {}, id)));
+    const dl = make("dd", {},
+        make("p", {},
+            make("em", {}, "Used by: ", ...Array.from(usedBy).flatMap(f => [", ",
+                make("a", { href: `#${NODE_ID_PREFIX}${encodeURIComponent(f)}` },
+                    make("code", {}, f))]).slice(1))),
+        make("p", {}, html(feat.doc!)));
     el.append(dt, dl);
 }
 

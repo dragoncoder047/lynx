@@ -20,7 +20,7 @@ fs.rmSync(metafile, { force: true });
 const config = {
     bundle: true,
     sourcemap: true,
-    minify: true,
+    minify: false,
     metafile: true,
     platform: "browser",
     charset: "utf8",
