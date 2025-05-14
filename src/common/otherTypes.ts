@@ -22,4 +22,5 @@ export class Point {
     toString() {
         return `Point(${this.x}, ${this.y})`;
     }
+    static EMPTY = new Point(undefined as any, undefined as any);
 }

@@ -1,12 +1,13 @@
-import { LynxFlow } from "./flow";
+import { decompress } from "./compress";
 import { AUTOSAVE_KEY, LOCAL_SAVE_KEY, LYNX_FILE_EXT } from "./constants";
-import { base64ToBytes, parseWithMetadata, isEmbedded } from "./utils.js";
-import { decompress } from './compress.js';
+import { LynxFlow } from "./flow";
+import { base64ToBytes, isEmbedded } from "./utils.js";
 
 type LoaderResult = Promise<{
     title: string,
     source: string,
 } | undefined>;
+
 async function loadFromHash(): LoaderResult {
     if (location.hash === "") return;
     const source = await decompress(base64ToBytes(location.hash.slice(1)));
@@ -33,14 +34,18 @@ async function loadFromURL(): LoaderResult {
     const params = new URLSearchParams(location.search);
     const url = params.get("url");
     if (!url) return;
-    const response = await fetch(url, { mode: "cors", cache: "reload" });
-    if (response.status === 404)
-        throw new Error(`Failed to fetch "${url}"`);
-    const source = await response.text();
-    return {
-        source,
-        title: `Linked flow from ${url}`
-    };
+    try {
+        const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
+        if (response.status === 404)
+            throw new Error(`"${url}" got a 404`);
+        const source = await response.text();
+        return {
+            source,
+            title: `Linked flow from ${url}`
+        };
+    } catch (_) {
+        throw new Error(`CORS blocked loading "${url}"`);
+    }
 }
 async function loadFromExample(): LoaderResult {
     const params = new URLSearchParams(location.search);

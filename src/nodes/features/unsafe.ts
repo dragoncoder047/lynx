@@ -1,6 +1,6 @@
 import { make } from "vanilla";
 import { Feature } from "../../common/feature";
-import { Bus } from "../../common/nodeDef";
+import { Port } from "../../common/nodeDef";
 import { consToArray } from "../../common/utils";
 import { env, exec, LSymbol, nil, Pair } from "../../lipsShim";
 import { defFeature, defNode } from "../all";
@@ -24,10 +24,10 @@ defFeature("unsafe-code", new Feature(async app => {
 defNode({
     id: "fn",
     inputs: {
-        inputs: new Bus("any", []),
+        inputs: new Port("any", [], ["bus"]),
     },
     outputs: {
-        outputs: new Bus("any", []),
+        outputs: new Port("any", [], ["bus"]),
     },
     features: ["unsafe-code"],
     doc: `Transforms the input and output values using a Scheme function.

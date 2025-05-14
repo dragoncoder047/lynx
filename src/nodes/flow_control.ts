@@ -8,7 +8,7 @@ defNode({
     by the trigger input.`,
     inputs: {
         trigger: new Port("signal", undefined),
-        value: new Port("T", undefined, true),
+        value: new Port("T", undefined, ["silent"]),
     },
     outputs: {
         value: new Port("T", undefined),

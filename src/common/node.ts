@@ -1,7 +1,7 @@
 import { LynxError } from "./errors";
 import { LynxFlow } from "./flow";
-import { Bus, NodeDef } from "./nodeDef";
-import { Generic, TypeSpec } from "./types";
+import { NodeDef } from "./nodeDef";
+import { Generic } from "./types";
 
 interface Link<N extends LynxNode, P extends string> {
     node: N;
@@ -77,7 +77,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         }
     }
     send(name: IPN, value: any, bi: number | undefined) {
-        if (this.def.inputs[name].silent) return;
+        if (this.def.inputs[name].is("silent")) return;
         if (this.def.inputs[name].type === "signal") value = true;
         if (bi === undefined) this.#changes[name] = value;
         // the below line relies on the nod being connected and the sending
@@ -107,7 +107,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             this.currentValues[outName][bo] = value;
         }
         else this.currentValues[outName] = value;
-        if (this.def.outputs[outName].silent) return;
+        if (this.def.outputs[outName].is("silent")) return;
         const links = this.linksByOutput[outName];
         if (!links) return;
         for (var { node, port, busNOut, busNIn } of links) {
@@ -146,7 +146,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             const { busNOut, busNIn } = nodeTo.nodesInputting[inTo][0]!;
             if ((busNOut === undefined && busNIn === undefined) || (busNOut === busIn))
                 // should've already been resolved by the connection getter code
-                nodeComplain(this as any, `Can't connect multiple outputs to the same input :${inTo}`);
+                nodeComplain(this, `Can't connect multiple outputs to the same input :${inTo}`, LynxError.INPUT_CONFLICT);
         }
         // record connection going in
         if (!nodeTo.nodesInputting[inTo]) nodeTo.nodesInputting[inTo] = [];

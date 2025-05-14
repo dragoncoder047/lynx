@@ -4,7 +4,7 @@ import { NodeDef } from "../common/nodeDef";
 import { Generic } from "../common/types";
 
 export const modulesReady = Promise.all([
-    import("./flow"),
+    import("./flow_control"),
     import("./html"),
     import("./simple"),
     import("./converters"),

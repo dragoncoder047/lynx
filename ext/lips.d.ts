@@ -51,6 +51,7 @@ declare module "@jcubic/lips" {
     class LNumber extends WithMetadata {
         __value__: BigInt;
         valueOf(): number;
+        constructor(value: any);
     }
     class LBigInteger extends LNumber {
     }

@@ -116,17 +116,17 @@
 
             Some nodes have *bussed* ports, meaning that they can output a variable number of values simultaneously in
             the form of an array. If you know the index in the array that you want to connect to, you can write the
-            index next to the node:
+            index next to the node after the port name like so:
 
             ```scheme
-            (chain (foo-bus) 1 :xx :yy (bar))
+            (chain (foo-bus) :xx:1 :yy (bar))
             ```
 
             This will connect index 1 of foo-bus's :xx output into the :yy input of bar.
 
             If you try to connect a bussed port to a non-bussed port, without specifying a number, Lynx will yell at
-            you. If both the input and output are buses, you must specify two numbers (to connect only one line) or no
-            numbers (to connect all lines at once).
+            you. If both the input and output are buses, you must specify both ports with numbers (to connect only one
+            line) or neither (to connect all lines at once).
 
             <!-- ## Custom Nodes and Features
 

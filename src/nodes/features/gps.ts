@@ -25,7 +25,7 @@ defNode({
     inputs: {},
     features: ["geolocation"],
     outputs: {
-        pos: new Port("point", new Point(undefined as any, undefined as any)),
+        pos: new Port("point", Point.EMPTY),
         altitude: new Port("number", 0),
         heading: new Port("number", 0),
         speed: new Port("number", 0),

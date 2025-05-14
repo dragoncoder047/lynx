@@ -1,9 +1,9 @@
-import { Bus } from "../common/nodeDef";
+import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
     id: "log",
-    inputs: { values: new Bus("any", []) },
+    inputs: { values: new Port("any", [], ["bus"]) },
     outputs: {},
     doc: "Logs the values whenever one of them updates.",
     update({ app, node }) {

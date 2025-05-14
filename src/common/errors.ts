@@ -1,14 +1,6 @@
 import { WithMetadata } from "@jcubic/lips";
 import { make } from "vanilla";
 
-export enum ErrorSeverity {
-    BAD_SYNTAX = 50,
-    UNDEFINED_NAME = 30,
-    BAD_CONN_SPEC = 20,
-    TYPE_MISMATCH = 10,
-    INPUT_CONFLICT = 0
-}
-
 export class LynxError extends Error {
     line: number;
     col: number;
@@ -22,6 +14,11 @@ export class LynxError extends Error {
         this.col = col;
         this.len = len;
     }
+    static readonly BAD_SYNTAX = 50;
+    static readonly UNDEFINED_NAME = 30;
+    static readonly BAD_CONN_SPEC = 20;
+    static readonly TYPE_MISMATCH = 10;
+    static readonly INPUT_CONFLICT = 0;
 }
 
 export class LynxMultiError extends LynxError {
