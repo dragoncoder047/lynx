@@ -1,4 +1,4 @@
-// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+42ac189ae0aac41789e8e8c38cdb56ab857db99a/node_modules/vanilla/vanilla.ts
+// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts
 function make(nameAndClasses, properties, ...children) {
   const [name, ...classes] = nameAndClasses.split(".");
   const el = document.createElement(name);

@@ -22666,7 +22666,7 @@ var require_ace = __commonJS({
   }
 });
 
-// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+42ac189ae0aac41789e8e8c38cdb56ab857db99a/node_modules/vanilla/vanilla.ts
+// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts
 function make(nameAndClasses, properties, ...children) {
   const [name, ...classes] = nameAndClasses.split(".");
   const el = document.createElement(name);
@@ -22685,7 +22685,7 @@ function bind(selector, event, handler, capture = false) {
   get(selector)?.addEventListener(event, handler, { capture });
 }
 var init_vanilla = __esm({
-  "node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+42ac189ae0aac41789e8e8c38cdb56ab857db99a/node_modules/vanilla/vanilla.ts"() {
+  "node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts"() {
   }
 });
 
@@ -35719,27 +35719,21 @@ var init_utils = __esm({
 });
 
 // src/common/nodeDef.ts
-var Port, Bus;
+var Port;
 var init_nodeDef = __esm({
   "src/common/nodeDef.ts"() {
     "use strict";
     Port = class {
       type;
       initialVal;
-      paramOnly;
-      silent;
-      constructor(type2, initialVal, silent = false, paramOnly) {
+      flags;
+      constructor(type2, initialVal, flags = []) {
         this.type = type2;
-        this.paramOnly = paramOnly;
         this.initialVal = initialVal;
-        this.silent = silent;
+        this.flags = flags;
       }
-    };
-    Bus = class extends Port {
-      // @ts-expect-error
-      initialVal;
-      constructor(type2, initialVal, silent) {
-        super(type2, initialVal, silent);
+      is(pf) {
+        return this.flags.includes(pf);
       }
     };
   }
@@ -35763,7 +35757,7 @@ var init_otherTypes = __esm({
         return `Color(${this.r}, ${this.g}, ${this.b})`;
       }
     };
-    Point = class {
+    Point = class _Point {
       x;
       y;
       constructor(x, y) {
@@ -35773,14 +35767,15 @@ var init_otherTypes = __esm({
       toString() {
         return `Point(${this.x}, ${this.y})`;
       }
+      static EMPTY = new _Point(void 0, void 0);
     };
   }
 });
 
-// src/nodes/flow.ts
-var flow_exports = {};
-var init_flow = __esm({
-  "src/nodes/flow.ts"() {
+// src/nodes/flow_control.ts
+var flow_control_exports = {};
+var init_flow_control = __esm({
+  "src/nodes/flow_control.ts"() {
     "use strict";
     init_nodeDef();
     init_all();
@@ -35791,7 +35786,7 @@ var init_flow = __esm({
     by the trigger input.`,
       inputs: {
         trigger: new Port("signal", void 0),
-        value: new Port("T", void 0, true)
+        value: new Port("T", void 0, ["silent"])
       },
       outputs: {
         value: new Port("T", void 0)
@@ -35882,7 +35877,7 @@ var init_simple = __esm({
     init_all();
     defNode({
       id: "log",
-      inputs: { values: new Bus("any", []) },
+      inputs: { values: new Port("any", [], ["bus"]) },
       outputs: {},
       doc: "Logs the values whenever one of them updates.",
       update({ app, node }) {
@@ -36005,7 +36000,7 @@ var init_gps = __esm({
       inputs: {},
       features: ["geolocation"],
       outputs: {
-        pos: new Port("point", new Point(void 0, void 0)),
+        pos: new Port("point", Point.EMPTY),
         altitude: new Port("number", 0),
         heading: new Port("number", 0),
         speed: new Port("number", 0)
@@ -36071,10 +36066,10 @@ var init_unsafe = __esm({
     defNode({
       id: "fn",
       inputs: {
-        inputs: new Bus("any", [])
+        inputs: new Port("any", [], ["bus"])
       },
       outputs: {
-        outputs: new Bus("any", [])
+        outputs: new Port("any", [], ["bus"])
       },
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
@@ -36180,7 +36175,7 @@ var init_all = __esm({
   "src/nodes/all.ts"() {
     "use strict";
     modulesReady = Promise.all([
-      Promise.resolve().then(() => (init_flow(), flow_exports)),
+      Promise.resolve().then(() => (init_flow_control(), flow_control_exports)),
       Promise.resolve().then(() => (init_html(), html_exports)),
       Promise.resolve().then(() => (init_simple(), simple_exports)),
       Promise.resolve().then(() => (init_converters(), converters_exports)),
@@ -36197,17 +36192,6 @@ var init_all = __esm({
 // src/editor/main.ts
 var ace3 = __toESM(require_ace(), 1);
 init_vanilla();
-
-// src/common/constants.ts
-var LYNX_FILE_EXT = ".scm";
-var LINK_COMMAND_NAME = "chain";
-var METADATA_NAME_RE = /^\*([a-z-_+]+)\*$/i;
-var LOCAL_SAVE_KEY = "lynx_localsaves";
-var AUTOSAVE_KEY = "lynx_autosave";
-var ONLINE_EXAMPLES_GH_ENDPOINT = "https://api.github.com/repos/dragoncoder047/lynx/contents/examples/files/";
-
-// src/common/autoload.ts
-await init_utils();
 
 // src/common/compress.ts
 async function compress(str) {
@@ -36245,7 +36229,16 @@ async function concatUint8Arrays(uint8arrays) {
   return new Uint8Array(buffer);
 }
 
+// src/common/constants.ts
+var LYNX_FILE_EXT = ".scm";
+var LINK_COMMAND_NAME = "chain";
+var METADATA_NAME_RE = /^\*([a-z-_+]+)\*$/i;
+var LOCAL_SAVE_KEY = "lynx_localsaves";
+var AUTOSAVE_KEY = "lynx_autosave";
+var ONLINE_EXAMPLES_GH_ENDPOINT = "https://api.github.com/repos/dragoncoder047/lynx/contents/examples/files/";
+
 // src/common/autoload.ts
+await init_utils();
 async function loadFromHash() {
   if (location.hash === "") return;
   const source = await decompress(base64ToBytes(location.hash.slice(1)));
@@ -36272,14 +36265,18 @@ async function loadFromURL() {
   const params2 = new URLSearchParams(location.search);
   const url = params2.get("url");
   if (!url) return;
-  const response = await fetch(url, { mode: "cors", cache: "reload" });
-  if (response.status === 404)
-    throw new Error(`Failed to fetch "${url}"`);
-  const source = await response.text();
-  return {
-    source,
-    title: `Linked flow from ${url}`
-  };
+  try {
+    const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
+    if (response.status === 404)
+      throw new Error(`"${url}" got a 404`);
+    const source = await response.text();
+    return {
+      source,
+      title: `Linked flow from ${url}`
+    };
+  } catch (_) {
+    throw new Error(`CORS blocked loading "${url}"`);
+  }
 }
 async function loadFromExample() {
   const params2 = new URLSearchParams(location.search);
@@ -36409,12 +36406,34 @@ var LynxError = class extends Error {
     this.col = col;
     this.len = len;
   }
+  equals(other) {
+    return [
+      this.message === other.message,
+      this.name === other.name,
+      this.line === other.line,
+      this.col === other.col,
+      this.len === other.len
+    ].reduce((a, b) => a && b, true);
+  }
+  static BAD_SYNTAX = 50;
+  static UNDEFINED_NAME = 30;
+  static BAD_CONN_SPEC = 20;
+  static TYPE_MISMATCH = 10;
+  static INPUT_CONFLICT = 0;
 };
-var LynxMultiError = class extends LynxError {
+var LynxMultiError = class _LynxMultiError extends LynxError {
   subErrors;
   constructor(subErrors) {
     super(null, null, null, null, null);
-    this.subErrors = subErrors;
+    const flattenedErrors = subErrors.flatMap((e75) => e75 instanceof _LynxMultiError ? e75.subErrors : [e75]);
+    const dedupedErrors = [];
+    outer: for (var subErr of flattenedErrors) {
+      for (var alreadySeen of dedupedErrors) {
+        if (subErr.equals(alreadySeen)) continue outer;
+      }
+      dedupedErrors.push(subErr);
+    }
+    this.subErrors = dedupedErrors;
   }
 };
 function makePosError(message, offending, severity = 1) {
@@ -36452,26 +36471,52 @@ function getGroundTypes(type2) {
   if (type2 === "number") return ["number", "bigint", "boolean"];
   return [type2];
 }
+function canConnect(output, input) {
+  if (input === "any") return true;
+  else if (Array.isArray(input)) {
+    if (Array.isArray(output)) return output.every((t2) => input.includes(t2));
+    else return input.includes(output);
+  } else if (Array.isArray(output)) return false;
+  return output === input;
+}
 
 // src/common/parseNodes.ts
 await init_utils();
 var NodeAsWritten = class {
   name;
   args;
-  constructor(name, args) {
+  isInvalidPlaceholder;
+  constructor(name, args, invalid = false) {
     this.name = name;
     this.args = args;
+    this.isInvalidPlaceholder = invalid;
   }
 };
 var PortRef = class {
   sym;
   name;
-  constructor(sym) {
-    this.sym = new LSymbol(sym.valueOf().replace(/^:/, ""));
-    this.sym.__line__ = sym.__line__;
-    this.sym.__col__ = sym.__col__ + 1;
-    this.sym.__offset__ = sym.__offset__ + 1;
-    this.name = this.sym.__name__;
+  busNum;
+  constructor(sym, metasym) {
+    var name, busNum;
+    if (sym instanceof LSymbol) {
+      const res = /^:(?<name>.*?)(:(?<busNum>\d+))?$/.exec(sym.valueOf());
+      name = res.groups.name;
+      busNum = res.groups.busNum;
+    } else {
+      name = sym;
+      busNum = void 0;
+    }
+    this.sym = new LSymbol(name);
+    this.sym.__line__ = (metasym ?? sym).__line__;
+    this.sym.__col__ = metasym?.__line__ ? metasym.__line__ : sym.__col__ + 1;
+    this.sym.__offset__ = metasym?.__offset__ ? metasym.__offset__ : sym.__offset__ + 1;
+    this.name = name;
+    if (busNum !== void 0) {
+      this.busNum = new LNumber(BigInt(busNum));
+      this.busNum.__line__ = (metasym ?? sym).__line__;
+      this.busNum.__col__ = metasym?.__line__ ? metasym.__line__ : sym.__col__ + sym.__name__.length + 2;
+      this.busNum.__offset__ = metasym?.__offset__ ? metasym.__offset__ : sym.__offset__ + sym.__name__.length + 2;
+    }
   }
 };
 function createNodes(app, forms) {
@@ -36483,7 +36528,7 @@ function createNodes(app, forms) {
       allErrors.push(makePosError(
         `Unknown ${user_env.get("type")(form)} ${repr2(form)} at top level`,
         form,
-        50 /* BAD_SYNTAX */
+        LynxError.BAD_SYNTAX
       ));
       continue;
     }
@@ -36492,7 +36537,7 @@ function createNodes(app, forms) {
     switch (name) {
       case "define":
         if (rest === _nil || rest.length() < 2) {
-          allErrors.push(makePosError("Truncated definition", first, 50 /* BAD_SYNTAX */));
+          allErrors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
           continue;
         }
         if (rest.car instanceof Pair)
@@ -36501,7 +36546,7 @@ function createNodes(app, forms) {
           namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
         break;
       case LINK_COMMAND_NAME:
-        const { chains, errors: errors2 } = processSpecialsAndCreation(consToArray(rest));
+        const { chains, errors: errors2 } = processSpecialsAndPortrefs(consToArray(rest));
         chains1.push(...chains);
         allErrors.push(...errors2);
         break;
@@ -36509,7 +36554,7 @@ function createNodes(app, forms) {
         allErrors.push(makePosError(
           `Unknown top-level invocation "${name}"`,
           first,
-          50 /* BAD_SYNTAX */
+          LynxError.BAD_SYNTAX
         ));
     }
   }
@@ -36521,8 +36566,10 @@ function createNodes(app, forms) {
   superpos.push(...virtual.nodes);
   connections.push(...virtual.links);
   allErrors.push(...errors, ...virtual.errors);
-  console.log("unprocessed superpos", superpos, "conns", connections);
-  console.warn(allErrors);
+  const sSet = new Set(superpos);
+  const cSet = new Set(connections);
+  const more = wfc(sSet, cSet);
+  console.log(more);
   throw "stop";
   if (allErrors.length > 0) {
     console.warn(allErrors);
@@ -36537,16 +36584,16 @@ function makeNode(value) {
 }
 var SPECIALS = /* @__PURE__ */ new Map([
   // port ref symbol (the general case)
-  [/^:/, (el, _out, zip, _errors) => {
+  [/^:/, (_m, el, _out, zip, _errors) => {
     zip.push(new PortRef(el));
   }],
   // stop linking
-  [/^~$/, (_el, out, zip, _errors) => {
+  [/^~$/, (_m, _el, out, zip, _errors) => {
     out.push(zip.slice());
     zip.length = 0;
   }],
   // backreference
-  [/^@/, (el, out, zip, errors) => {
+  [/^@/, (_m, el, out, zip, errors) => {
     const reffed = el.valueOf().slice(1);
     const prevNodes = out.flat(1).concat(zip);
     const n = prevNodes.findLast((x) => x instanceof NodeAsWritten && x.name.valueOf() === reffed);
@@ -36554,12 +36601,12 @@ var SPECIALS = /* @__PURE__ */ new Map([
       errors.push(makePosError(
         `Backreference to "${reffed}" node, but there weren't any previous to here`,
         el,
-        30 /* UNDEFINED_NAME */
+        LynxError.UNDEFINED_NAME
       ));
     else zip.push(n);
   }]
 ]);
-function processSpecialsAndCreation(elements) {
+function processSpecialsAndPortrefs(elements) {
   const chains = [];
   var curZip = [];
   const errors = [];
@@ -36568,14 +36615,11 @@ function processSpecialsAndCreation(elements) {
       curZip.push(makeNode(el));
       continue;
     }
-    if (el instanceof LNumber) {
-      curZip.push(el);
-      continue;
-    }
     if (el instanceof LSymbol) {
       for (var [regex, handler] of SPECIALS) {
-        if (regex.test(el.toString())) {
-          handler(el, chains, curZip, errors);
+        const m = regex.exec(el.toString());
+        if (m) {
+          handler(m, el, chains, curZip, errors);
           continue outer;
         }
       }
@@ -36595,12 +36639,11 @@ function processNamed(chain, named) {
       const reffed = named[val.valueOf()];
       if (reffed === void 0) {
         errors.push(makePosError(
-          `Named node ${val} not defined, ignoring this.`,
+          `Named node ${val} not defined.`,
           val,
-          30 /* UNDEFINED_NAME */
+          LynxError.UNDEFINED_NAME
         ));
-        chain.splice(i, 1);
-        i--;
+        chain[i] = new NodeAsWritten(val, [], true);
       } else chain[i] = reffed;
     }
   }
@@ -36629,7 +36672,7 @@ function implicit1(s) {
       errors.push(makePosError(
         `Invalid init port name ${keyName} (expected a symbol)`,
         keyName,
-        50 /* BAD_SYNTAX */
+        LynxError.BAD_SYNTAX
       ));
       continue;
     }
@@ -36637,7 +36680,7 @@ function implicit1(s) {
       errors.push(makePosError(
         `Missing init value for ${keyName}`,
         keyName,
-        50 /* BAD_SYNTAX */
+        LynxError.BAD_SYNTAX
       ));
       break;
     }
@@ -36646,8 +36689,8 @@ function implicit1(s) {
     links.push({
       from: implicitNode,
       to: s,
-      portNames: [new PortRef(new LSymbol("value")), new PortRef(keyName)],
-      busIndexes: []
+      portRefs: [new PortRef("value", keyVal), new PortRef(keyName)],
+      isImplicitConnection: true
     });
   }
   return { nodes, links, errors };
@@ -36664,7 +36707,7 @@ function createImplicitSuperposition(a, sym, value, type2) {
         id: `__implicit_arg_${name}__`,
         inputs: {},
         outputs: {
-          value: new Port(type2, value)
+          value: new Port(type2, value, [])
         },
         doc: `Implicit node created by init arg :${name}`,
         setup({ node }) {
@@ -36709,8 +36752,8 @@ function getSuperpositions(chains, allNDs) {
       connections.push({
         from: prev,
         to: cur,
-        portNames: slice.filter((x) => x instanceof PortRef),
-        busIndexes: slice.filter((x) => x instanceof LNumber)
+        portRefs: slice.filter((x) => x instanceof PortRef),
+        isImplicitConnection: false
       });
       prev = cur;
       i = j;
@@ -36723,17 +36766,17 @@ function notValidHere(what) {
   return makePosError(
     `${astNode} not valid here`,
     astNode,
-    50 /* BAD_SYNTAX */
+    LynxError.BAD_SYNTAX
   );
 }
 function createInitialSuperpos(naw, allNDs) {
-  const matchingDefs = allNDs.filter((nd) => nd.id === naw.name.valueOf());
+  const matchingDefs = naw.isInvalidPlaceholder ? [] : allNDs.filter((nd) => nd.id === naw.name.valueOf());
   const errors = [];
-  if (matchingDefs.length === 0) {
+  if (matchingDefs.length === 0 && !naw.isInvalidPlaceholder) {
     errors.push(makePosError(
       `Node type "${naw.name}" doesn't exist`,
       naw.name,
-      30 /* UNDEFINED_NAME */
+      LynxError.UNDEFINED_NAME
     ));
   }
   return {
@@ -36759,11 +36802,340 @@ function* choicesMap(choices) {
   }
   const [choice1, ...otherChoices] = choices;
   const [choice1Name, choice1Values] = choice1;
-  for (var submap of choicesMap(otherChoices)) {
+  for (var nextChoices of choicesMap(otherChoices)) {
     for (var choice1Value of choice1Values.flatMap(getGroundTypes)) {
-      yield [[choice1Name, choice1Value], ...submap];
+      yield [[choice1Name, choice1Value], ...nextChoices];
     }
   }
+}
+function wfc(nodes, connections) {
+  const connCache = /* @__PURE__ */ new Map();
+  const superCache = /* @__PURE__ */ new Map();
+  const errors = [];
+  for (var conn of connections) {
+    for (var c1 of conn.from.concretes) {
+      for (var c2 of conn.to.concretes) {
+        var res = getCache(connCache, c1, c2, conn);
+        if (res === void 0) {
+          res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
+          putCache(connCache, c1, c2, conn, res);
+          saveSuperCache(superCache, nodes, c1, res);
+          saveSuperCache(superCache, nodes, c2, res);
+        }
+      }
+    }
+  }
+  const realNodes = /* @__PURE__ */ new Map();
+  const realConnections = /* @__PURE__ */ new Set();
+  for (var node of nodes) {
+    if (node.concretes.size < 1) continue;
+    const res2 = superCache.get(node);
+    if (res2 === void 0) {
+      if (new Set([...node.concretes].map((c) => c.def)).size > 1) {
+        errors.push(makePosError(
+          `Could not resolve variant of isolated node "${node.asWritten.name}". Try connecting something to it.`,
+          node.sym,
+          LynxError.BAD_CONN_SPEC
+        ));
+      } else realNodes.set(node, [...node.concretes][0].def);
+      continue;
+    }
+    const csNoErrors = [...res2].flatMap(([c, r]) => r instanceof LynxError ? [] : [c]);
+    if (csNoErrors.length === 0) {
+      errors.push(...[...res2].map(([_, r]) => r));
+      continue;
+    }
+    const defsSet = new Set(csNoErrors.map((c) => c.def));
+    const firstConcrete = csNoErrors[0];
+    const firstDef = firstConcrete.def;
+    if (defsSet.size > 1) {
+      errors.push(makePosError(
+        `Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
+        node.sym,
+        LynxError.BAD_CONN_SPEC
+      ));
+      continue;
+    }
+    realNodes.set(node, firstDef);
+  }
+  for (var conn of connections) {
+    const tgtLeft = realNodes.get(conn.from);
+    const tgtRight = realNodes.get(conn.to);
+    const fc = [...conn.from.concretes].find((c) => tgtLeft === c.def);
+    const tc = [...conn.to.concretes].find((c) => tgtRight === c.def);
+    const res2 = getCache(connCache, fc, tc, conn);
+    if (res2 instanceof LynxError) {
+      continue;
+    }
+    if (res2 === void 0) {
+      throw new RangeError("unreachable nope");
+    }
+    realConnections.add({
+      from: conn.from,
+      to: conn.to,
+      outPort: res2[0],
+      inPort: res2[1]
+    });
+  }
+  if (errors.length > 0) {
+    console.warn(errors);
+  }
+  return {
+    errors,
+    realNodes,
+    connections: realConnections
+  };
+}
+function saveSuperCache(cache, superpositions, d, res) {
+  for (var s of superpositions) {
+    const cache1 = cache.get(s) ?? /* @__PURE__ */ new Map();
+    cache.set(s, cache1);
+    for (var c of s.concretes) {
+      if (c === d) {
+        const arr = cache1.get(c) ?? [];
+        arr.push(res);
+        cache1.set(c, arr);
+      }
+    }
+  }
+}
+function putCache(cache, left, right, conn, value) {
+  if (!cache.has(left)) cache.set(left, /* @__PURE__ */ new Map());
+  const cache2 = cache.get(left);
+  if (!cache2.has(right)) cache2.set(right, /* @__PURE__ */ new Map());
+  const cache3 = cache2.get(right);
+  cache3.set(conn, value);
+}
+function getCache(cache, left, right, conn) {
+  return cache.get(left)?.get(right)?.get(conn);
+}
+function tryConnect(from, to, refs, isImplicitParamConnection) {
+  const typeChoices = [];
+  const ports1 = resolvePortTypes(from.def.outputs, from.genericChoices);
+  const ports2 = resolvePortTypes(to.def.inputs, to.genericChoices);
+  const ports1Obj = Object.fromEntries(ports1);
+  const ports2Obj = Object.fromEntries(ports2);
+  for (var [n1, t1] of ports1) {
+    for (var [n2, t2] of ports2) {
+      if (t2.is("paramOnly") && !isImplicitParamConnection) continue;
+      if (canConnect(t1.type, t2.type)) {
+        typeChoices.push([new PortRef(n1, from.sym), new PortRef(n2, to.sym)]);
+      }
+    }
+  }
+  if (typeChoices.length === 0) {
+    return makePosError(
+      `No outputs of "${from.def.id}" match the type of any input of "${to.def.id}". Try inserting a converter node in between.`,
+      refs[0]?.sym ?? from.sym,
+      LynxError.TYPE_MISMATCH
+    );
+  }
+  var successPorts;
+  const refsWithName = refs.filter((ref) => ref.name !== "");
+  const refsWithoutName = refs.filter((ref) => ref.name === "");
+  var needToGuessBusNumberAssignment = false;
+  portswitch: switch (refsWithName.length) {
+    case 0: {
+      if (typeChoices.length > 1) {
+        return makePosError(
+          `Multiple ways to connect "${from.def.id}" to "${to.def.id}" and none was specified`,
+          from.sym,
+          LynxError.BAD_CONN_SPEC
+        );
+      }
+      successPorts = typeChoices[0];
+      needToGuessBusNumberAssignment = true;
+      break;
+    }
+    case 1: {
+      const sPort = refsWithName[0];
+      const tPortLeft = ports1Obj[sPort.name];
+      const tPortRight = ports2Obj[sPort.name];
+      const connWithNameOnLeft = typeChoices.filter(([o, _]) => o.name === sPort.name);
+      const connWithNameOnRight = typeChoices.filter(([_, i]) => i.name === sPort.name);
+      if (tPortLeft === void 0 && tPortRight === void 0) {
+        return makePosError(
+          `No port :${sPort.name} exists on outputs of "${from.def.id}" or inputs of "${to.def.id}"`,
+          sPort.sym,
+          LynxError.UNDEFINED_NAME
+        );
+      }
+      if (tPortLeft !== void 0 && tPortRight !== void 0) {
+        if (connWithNameOnLeft.length === 1) {
+          successPorts = connWithNameOnLeft[0].with(0, sPort);
+          if (refsWithoutName.length > 0) successPorts[1].busNum = refsWithoutName[0].busNum;
+          break portswitch;
+        }
+        if (connWithNameOnRight.length === 1) {
+          successPorts = connWithNameOnRight[0].with(1, sPort);
+          if (refsWithoutName.length > 0) successPorts[0].busNum = refsWithoutName[0].busNum;
+          break portswitch;
+        }
+        return makePosError(
+          `Write ':${sPort.name} :${sPort.name}' if you intend to connect :${sPort.name} of "${from.def.id}" to :${sPort.name} of "${to.def.id}". There are multiple other ports that each of these could be connected to.`,
+          sPort.sym,
+          LynxError.BAD_CONN_SPEC
+        );
+      }
+      if (tPortLeft !== void 0) {
+        if (connWithNameOnLeft.length === 1) {
+          const conn = connWithNameOnLeft[0];
+          if (to.def.inputs[conn[1].name].is("paramOnly")) {
+            return makePosError(
+              `Output :${sPort.name} (${tPortLeft}) of "${from.def.id}" can only connect to :${conn[1]} of "${to.def.id}", but it is initialize-only`,
+              sPort.sym,
+              LynxError.INPUT_CONFLICT
+            );
+          }
+          successPorts = conn.with(0, sPort);
+          if (refsWithoutName.length > 0) successPorts[1].busNum = refsWithoutName[0].busNum;
+          break portswitch;
+        } else if (connWithNameOnLeft.length === 0)
+          return makePosError(
+            `No inputs to "${to.def.id}" can be connected to output :${sPort.name} (${tPortLeft}) of "${from.def.id}"`,
+            sPort.sym,
+            LynxError.TYPE_MISMATCH
+          );
+        else return makePosError(
+          `Multiple inputs to "${to.def.id}" (${connWithNameOnLeft.map(([_, i]) => i)}) can be connected to output :${sPort.name} (${tPortLeft}) of "${from.def.id}" - use two symbols to specify.`,
+          sPort.sym,
+          LynxError.BAD_CONN_SPEC
+        );
+      }
+      if (tPortRight !== void 0) {
+        if (to.def.inputs[sPort.name].is("paramOnly")) {
+          return makePosError(
+            `Input :${sPort.name} (${tPortLeft}) of "${to.def.id}" is initialize-only`,
+            sPort.sym,
+            LynxError.INPUT_CONFLICT
+          );
+        }
+        if (connWithNameOnRight.length === 1) {
+          successPorts = connWithNameOnRight[0].with(1, sPort);
+          if (refsWithoutName.length > 0) successPorts[0].busNum = refsWithoutName[0].busNum;
+          break portswitch;
+        } else if (connWithNameOnRight.length === 0)
+          return makePosError(
+            `No outputs of "${from.def.id}" can be connected to input :${sPort.name} (${tPortRight}) of "${to.def.id}"`,
+            sPort.sym,
+            LynxError.TYPE_MISMATCH
+          );
+        else return makePosError(
+          `Multiple outputs of "${from.def.id}" (${connWithNameOnRight.map(([i, _]) => i)}) can be connected to input :${sPort.name} (${tPortRight}) of "${to.def.id}" - use two symbols to specify.`,
+          sPort.sym,
+          LynxError.BAD_CONN_SPEC
+        );
+      }
+      throw "unreachable";
+    }
+    case 2: {
+      const p1 = refsWithName[0];
+      const p2 = refsWithName[1];
+      const tPortLeft = ports1Obj[p1.name];
+      const tPortRight = ports2Obj[p2.name];
+      const errors2 = [];
+      if (tPortLeft === void 0) {
+        errors2.push(makePosError(
+          `Node "${from.def.id}" has no output port :${p1.name}`,
+          p1.sym,
+          LynxError.UNDEFINED_NAME
+        ));
+      }
+      if (tPortRight === void 0) {
+        errors2.push(makePosError(
+          `Node "${to.def.id}" has no input port :${p2.name}`,
+          p2.sym,
+          LynxError.UNDEFINED_NAME
+        ));
+      }
+      if (errors2.length === 0 && !canConnect(tPortLeft.type, tPortRight.type)) {
+        return makePosError(
+          `Cannot connect output :${p1.name} (${tPortLeft}) of "${from.def.id}" node to :${p2.name} (${tPortRight}) of "${to.def.id}"`,
+          p2.sym,
+          LynxError.TYPE_MISMATCH
+        );
+      }
+      if (errors2.length === 2) return new LynxMultiError(errors2);
+      else if (errors2.length === 1) return errors2[0];
+      successPorts = [p1, p2];
+      break;
+    }
+    default:
+      return makePosError("Too many port references", refs[2].sym, LynxError.BAD_CONN_SPEC);
+  }
+  const [pLeft, pRight] = [ports1.get(successPorts[0].name), ports2.get(successPorts[1].name)];
+  const [leftIsBus, rightIsBus] = [pLeft.is("bus"), pRight.is("bus")];
+  const refsWithBus = refs.filter((ref) => ref.busNum !== void 0);
+  const errors = [];
+  if (!leftIsBus && !rightIsBus) {
+    if (needToGuessBusNumberAssignment) {
+      if (refsWithBus.length > 0) {
+        return makePosError(
+          `Number not allowed here. Neither output :${successPorts[0].sym} of "${from.def.id}" nor input :${successPorts[1].sym} of "${to.def.id}" is a bus.`,
+          refsWithBus[0].busNum,
+          LynxError.BAD_CONN_SPEC
+        );
+      }
+    } else {
+      if (successPorts[0].busNum !== void 0)
+        errors.push(makePosError(
+          `Output :${successPorts[0].sym} of "${from.def.id}" is not a bus`,
+          successPorts[0].busNum,
+          LynxError.TYPE_MISMATCH
+        ));
+      if (successPorts[1].busNum !== void 0)
+        errors.push(makePosError(
+          `Input :${successPorts[1].sym} of "${to.def.id}" is not a bus`,
+          successPorts[1].busNum,
+          LynxError.TYPE_MISMATCH
+        ));
+    }
+  } else if (leftIsBus && rightIsBus) {
+    if (needToGuessBusNumberAssignment) {
+      successPorts[0].busNum = refsWithBus[0]?.busNum;
+      successPorts[1].busNum = refsWithBus[1]?.busNum;
+    }
+    if (successPorts[0].busNum !== void 0 === (successPorts[1].busNum !== void 0)) {
+    } else
+      return makePosError(
+        `Both output :${successPorts[0].sym} of "${from.def.id}" and input :${successPorts[1].sym} of "${to.def.id}" are busses, you must specify two numbers or none`,
+        successPorts[0].busNum ?? successPorts[1].busNum,
+        LynxError.TYPE_MISMATCH
+      );
+  } else {
+    const [b, nb] = leftIsBus ? [0, 1] : [1, 0];
+    const [iinL, iinR] = leftIsBus ? ["", "not "] : ["not ", ""];
+    if (needToGuessBusNumberAssignment) {
+      if (refsWithBus.length === 2) {
+        successPorts[0].busNum = refsWithBus[0]?.busNum;
+        successPorts[1].busNum = refsWithBus[1]?.busNum;
+      } else {
+        successPorts[b].busNum = refsWithBus[0]?.busNum;
+      }
+    }
+    if (successPorts[b].busNum === void 0)
+      errors.push(makePosError(
+        `Output :${successPorts[0].sym} of "${from.def.id}" is ${iinL}a bus, and input :${successPorts[1].sym} of "${to.def.id}" is ${iinR}a bus, so a number is required here`,
+        successPorts[b].sym,
+        LynxError.TYPE_MISMATCH
+      ));
+    if (successPorts[nb].busNum !== void 0)
+      errors.push(makePosError(
+        `Output :${successPorts[0].sym} of "${from.def.id}" is ${iinL}a bus, and input :${successPorts[1].sym} of "${to.def.id}" is ${iinR}a bus, so a number is not allowed here`,
+        successPorts[nb].busNum,
+        LynxError.TYPE_MISMATCH
+      ));
+  }
+  return errors.length > 0 ? errors.length === 1 ? errors[0] : new LynxMultiError(errors) : successPorts;
+}
+function resolvePortTypes(portSide, concrete) {
+  const out = /* @__PURE__ */ new Map();
+  for (var name of Object.keys(portSide)) {
+    const thePort = portSide[name];
+    const theType = concrete.get(thePort.type) ?? thePort.type;
+    out.set(name, new Port(theType, thePort.initialVal, thePort.flags));
+  }
+  return out;
 }
 
 // src/common/flow.ts

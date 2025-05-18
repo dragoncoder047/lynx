@@ -1,9 +1,9 @@
 import { get, html, make } from "vanilla";
-import { EXAMPLES, type Example } from "./examples";
+import { EXAMPLES } from "./examples";
 
 const exDiv = get("#examples-container")!;
 
-const grouped = Object.groupBy(EXAMPLES, (x: Example) => x.category);
+const grouped = Object.groupBy(EXAMPLES, x => x.category);
 
 for (var category of Object.keys(grouped).sort()) {
     const exs = grouped[category]!;

@@ -14,6 +14,15 @@ export class LynxError extends Error {
         this.col = col;
         this.len = len;
     }
+    equals(other: LynxError): boolean {
+        return [
+            this.message === other.message,
+            this.name === other.name,
+            this.line === other.line,
+            this.col === other.col,
+            this.len === other.len,
+        ].reduce((a, b) => a && b, true);
+    }
     static readonly BAD_SYNTAX = 50;
     static readonly UNDEFINED_NAME = 30;
     static readonly BAD_CONN_SPEC = 20;
@@ -26,7 +35,15 @@ export class LynxMultiError extends LynxError {
     constructor(subErrors: LynxError[]) {
         // @ts-ignore
         super(null, null, null, null, null);
-        this.subErrors = subErrors;
+        const flattenedErrors = subErrors.flatMap(e => e instanceof LynxMultiError ? e.subErrors : [e]);
+        const dedupedErrors: LynxError[] = [];
+        outer: for (var subErr of flattenedErrors) {
+            for (var alreadySeen of dedupedErrors) {
+                if (subErr.equals(alreadySeen)) continue outer;
+            }
+            dedupedErrors.push(subErr);
+        }
+        this.subErrors = dedupedErrors;
     }
 }
 

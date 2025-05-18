@@ -16,7 +16,7 @@
         "@jcubic/lips": "github:jcubic/lips#876af5394f85e7b720f9a62545c19864bc1fe409",
         "ace-builds": "^1.4.12",
         "marked": "^15.0.11",
-        "vanilla": "github:dragoncoder047/vanilla#42ac189ae0aac41789e8e8c38cdb56ab857db99a"
+        "vanilla": "github:dragoncoder047/vanilla#400e4ce789aebdcb53c7250a2d4ad6c94f1b193c"
     },
     "type": "module",
     "scripts": {

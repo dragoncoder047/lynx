@@ -11,8 +11,7 @@ import { consToArray, repr } from "./utils.js";
 interface ConnectionSpec {
     readonly from: Superposition,
     readonly to: Superposition,
-    readonly portNames: [] | [PortRef] | [PortRef, PortRef];
-    readonly busIndexes: [] | [PortRef] | [PortRef, PortRef];
+    readonly portRefs: [] | [PortRef] | [PortRef, PortRef];
     readonly isImplicitConnection: boolean;
 }
 
@@ -25,10 +24,8 @@ interface ConcreteNodeDef {
 interface Connection {
     readonly outPort: PortRef;
     readonly inPort: PortRef;
-    readonly outBusI: LNumber | undefined;
-    readonly inBusI: LNumber | undefined;
-    readonly from: ConcreteNodeDef;
-    readonly to: ConcreteNodeDef;
+    readonly from: Superposition;
+    readonly to: Superposition;
 }
 
 interface Superposition {
@@ -51,9 +48,17 @@ class NodeAsWritten {
 class PortRef {
     readonly sym: LSymbol;
     readonly name: string;
-    readonly busNum: LNumber | undefined;
+    busNum: LNumber | undefined;
     constructor(sym: LSymbol | string, metasym?: WithMetadata) {
-        const { name, busNum } = /^:(?<name>.+?)(:(?<busNum>\d+))?$/.exec(sym.valueOf())!.groups as { name: string, busNum: string | undefined };
+        var name: string, busNum: string | undefined;
+        if (sym instanceof LSymbol) {
+            const res = /^:(?<name>.*?)(:(?<busNum>\d+))?$/.exec(sym.valueOf());
+            name = res!.groups!.name as string;
+            busNum = res!.groups!.busNum;
+        } else {
+            name = sym;
+            busNum = undefined;
+        }
         this.sym = new LSymbol(name);
         this.sym.__line__ = (metasym ?? sym as any).__line__;
         this.sym.__col__ = metasym?.__line__ ? metasym.__line__ : (sym as any).__col__! + 1;
@@ -93,7 +98,7 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
                     namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
                 break;
             case LINK_COMMAND_NAME:
-                const { chains, errors } = processSpecialsAndCreation(consToArray(rest))
+                const { chains, errors } = processSpecialsAndPortrefs(consToArray(rest))
                 chains1.push(...chains);
                 allErrors.push(...errors);
                 break;
@@ -110,8 +115,10 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
     superpos.push(...virtual.nodes);
     connections.push(...virtual.links);
     allErrors.push(...errors, ...virtual.errors);
-    console.log("unprocessed superpos", superpos, "conns", connections);
-    console.warn(allErrors);
+    const sSet = new Set(superpos);
+    const cSet = new Set(connections);
+    const more = wfc(sSet, cSet);
+    console.log(more);
     throw "stop";
     if (allErrors.length > 0) {
         console.warn(allErrors);
@@ -155,7 +162,7 @@ const SPECIALS: Map<RegExp, (m: RegExpExecArray, el: LSymbol, out: Chain[], curZ
     }],
 ]);
 
-function processSpecialsAndCreation(elements: (Pair | LSymbol | LNumber)[]): { chains: Chain[], errors: LynxError[] } {
+function processSpecialsAndPortrefs(elements: (Pair | LSymbol | LNumber)[]): { chains: Chain[], errors: LynxError[] } {
     const chains: Chain[] = [];
     var curZip: Chain = [];
     const errors: LynxError[] = [];
@@ -237,8 +244,7 @@ function implicit1(s: Superposition): { nodes: Superposition[], links: Connectio
         links.push({
             from: implicitNode,
             to: s,
-            portNames: [new PortRef(new LSymbol("value"), keyVal), new PortRef(keyName)],
-            busIndexes: [],
+            portRefs: [new PortRef("value", keyVal), new PortRef(keyName)],
             isImplicitConnection: true
         });
     }
@@ -304,8 +310,7 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
             connections.push({
                 from: prev,
                 to: cur,
-                portNames: slice.filter(x => x instanceof PortRef) as any,
-                busIndexes: slice.filter(x => x instanceof LNumber) as any,
+                portRefs: slice.filter(x => x instanceof PortRef) as any,
                 isImplicitConnection: false
             });
             prev = cur;
@@ -315,7 +320,7 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
     return { superpos: [...seen.values()], connections, errors };
 }
 
-function notValidHere(what: PortRef | LNumber): LynxError {
+function notValidHere(what: PortRef | LNumber | LSymbol): LynxError {
     const astNode = what instanceof PortRef ? what.sym : what;
     return makePosError(`${astNode} not valid here`,
         astNode, LynxError.BAD_SYNTAX);
@@ -369,37 +374,126 @@ each superposition is a list of possible defs and template types for each node
 
 the connection specs reference the superpositions.
 
-1. iterate over each superposition in an infinite loop
-    a. get all of the connection specs referencing it
-    b. iterate over each possible pair of concretes for the connection spec
-    c. if all attempts to connect stuff to this concrete produce only errors,
-       discard it unless it is the last one in the set (in that case keep it
-       and the errors)
-    d. cache connection attempt results by concrete pair and connection spec
-       to speed up subsequent iterations.
-2. once things stop getting discarded validate everything
-    a. if a node has zero concretes left ignore it (the superposition assignment
-    or named node resolution step will have already generated an error for it)
-    b. if there are multiple variants left:
-        i.  if all reference the same node def but differ only in template 
+1. try every possible combination of concrete node def according to the connections
+    a. cache all connections to avoid computing them twice
+2. validate stuff
+    a. if all of the nodes' concretes produced errors just return all of them
+    b. if there are multiple variants left that have no errors:
+        i.  if all reference the same node def variant but differ only in template 
             generics this is okay
-        ii. if they don't, issue a "could not assign variant, try adding
+        ii. if they don't, issue a "could not resolve variant, try adding
             more inputs" error
-    c. check for multiple-output-into-one-input conflicts
-
 */
 type ConnectResult = [PortRef, PortRef] | LynxError;
+
+// idk why i did it in this order
 type ConnCache = Map<ConcreteNodeDef, Map<ConcreteNodeDef, Map<ConnectionSpec, ConnectResult>>>;
-function wfc(nodes: Superposition[], connections: ConnectionSpec[]) {
-    const cache: ConnCache = new Map;
+type SuperCache = Map<Superposition, Map<ConcreteNodeDef, ConnectResult[]>>;
+/**
+ * mutates the input sets
+ */
+function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { connections: Set<Connection>, realNodes: Map<Superposition, NodeDef>, errors: LynxError[] } {
+    const connCache: ConnCache = new Map;
+    const superCache: SuperCache = new Map;
+    const errors: LynxError[] = [];
+    for (var conn of connections) {
+        for (var c1 of conn.from.concretes) {
+            for (var c2 of conn.to.concretes) {
+                var res = getCache(connCache, c1, c2, conn);
+                if (res === undefined) {
+                    res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
+                    putCache(connCache, c1, c2, conn, res);
+                    saveSuperCache(superCache, nodes, c1, res);
+                    saveSuperCache(superCache, nodes, c2, res);
+                }
+            }
+        }
+    }
+    // all good now validate
+    const realNodes: Map<Superposition, NodeDef> = new Map;
+    const realConnections: Set<Connection> = new Set;
+    for (var node of nodes) {
+        if (node.concretes.size < 1) continue;
+        const res = superCache.get(node);
+        if (res === undefined) {
+            // isolated node with no connections
+            // check to see if it is just all one node def; if it is; ok
+            if (new Set([...node.concretes].map(c => c.def)).size > 1) {
+                errors.push(makePosError(`Could not resolve variant of isolated node "${node.asWritten.name}". Try connecting something to it.`,
+                    node.sym, LynxError.BAD_CONN_SPEC));
+            } else realNodes.set(node, [...node.concretes][0]!.def);
+            continue;
+        }
+        const csNoErrors = [...res].flatMap(([c, r]) => r instanceof LynxError ? [] : [c]);
+        if (csNoErrors.length === 0) {
+            errors.push(...[...res].map(([_, r]) => r as any as LynxError));
+            continue;
+        }
+        const defsSet = new Set(csNoErrors.map(c => c.def));
+        const firstConcrete = csNoErrors[0]!;
+        const firstDef = firstConcrete.def;
+        if (defsSet.size > 1) {
+            errors.push(makePosError(`Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
+                node.sym, LynxError.BAD_CONN_SPEC));
+            continue;
+        }
+        realNodes.set(node, firstDef);
+    }
+    // create all of the connection objects
+    for (var conn of connections) {
+        const tgtLeft = realNodes.get(conn.from);
+        const tgtRight = realNodes.get(conn.to);
+        const fc = [...conn.from.concretes].find(c => tgtLeft === c.def)!;
+        const tc = [...conn.to.concretes].find(c => tgtRight === c.def)!;
+        const res = getCache(connCache, fc, tc, conn) as [PortRef, PortRef];
+        if (res instanceof LynxError) {
+            continue;
+        }
+        if (res === undefined) {
+            throw new RangeError("unreachable nope");
+        }
+        realConnections.add({
+            from: conn.from,
+            to: conn.to,
+            outPort: res[0],
+            inPort: res[1]
+        });
+    }
+    if (errors.length > 0) {
+        console.warn(errors);
+    }
+    // throw "blooey";
+    return {
+        errors,
+        realNodes,
+        connections: realConnections
+    }
 }
 
-function addCache(cache: ConnCache, left: ConcreteNodeDef, right: ConcreteNodeDef, conn: ConnectionSpec, value: ConnectResult) {
+function saveSuperCache(cache: SuperCache, superpositions: Set<Superposition>, d: ConcreteNodeDef, res: ConnectResult) {
+    for (var s of superpositions) {
+        const cache1 = cache.get(s) ?? new Map;
+        cache.set(s, cache1);
+        for (var c of s.concretes) {
+            if (c === d) {
+                const arr = cache1.get(c) ?? [];
+                arr.push(res);
+                cache1.set(c, arr);
+            }
+        }
+    }
+}
+
+function putCache(cache: ConnCache, left: ConcreteNodeDef, right: ConcreteNodeDef, conn: ConnectionSpec, value: ConnectResult) {
     if (!cache.has(left)) cache.set(left, new Map);
     const cache2 = cache.get(left)!;
     if (!cache2.has(right)) cache2.set(right, new Map);
     const cache3 = cache2.get(right)!
     cache3.set(conn, value);
+}
+
+function getCache(cache: ConnCache, left: ConcreteNodeDef, right: ConcreteNodeDef, conn: ConnectionSpec): ConnectResult | undefined {
+    return cache.get(left)?.get(right)?.get(conn);
 }
 
 /*
@@ -437,7 +531,10 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
             refs[0]?.sym ?? from.sym, LynxError.TYPE_MISMATCH);
     }
     var successPorts: [PortRef, PortRef];
-    portswitch: switch (refs.length) {
+    const refsWithName = refs.filter(ref => ref.name !== "");
+    const refsWithoutName = refs.filter(ref => ref.name === "");
+    var needToGuessBusNumberAssignment = false;
+    portswitch: switch (refsWithName.length) {
         case 0: {
             // No ports specified, so there must be only one with the right type to connect
             if (typeChoices.length > 1) {
@@ -446,11 +543,12 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
                     from.sym, LynxError.BAD_CONN_SPEC);
             }
             successPorts = typeChoices[0]!;
-            break portswitch;
+            needToGuessBusNumberAssignment = true;
+            break;
         }
         case 1: {
             // one side must be specified by the name; the other must be inferrable by the type
-            const sPort = refs[0]!;
+            const sPort = refsWithName[0]!;
             const tPortLeft = ports1Obj[sPort.name];
             const tPortRight = ports2Obj[sPort.name];
             const connWithNameOnLeft = typeChoices.filter(([o, _]) => o.name === sPort.name);
@@ -465,11 +563,13 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
                 // the possible connections with the name placed on one side, one of them must have only one choice.
                 // if both ways have only one choice it is easy.
                 if (connWithNameOnLeft.length === 1) {
-                    successPorts = connWithNameOnLeft[0]!;
+                    successPorts = connWithNameOnLeft[0]!.with(0, sPort) as any;
+                    if (refsWithoutName.length > 0) successPorts[1].busNum = refsWithoutName[0]!.busNum;
                     break portswitch;
                 }
                 if (connWithNameOnRight.length === 1) {
-                    successPorts = connWithNameOnRight[0]!;
+                    successPorts = connWithNameOnRight[0]!.with(1, sPort) as any;
+                    if (refsWithoutName.length > 0) successPorts[0].busNum = refsWithoutName[0]!.busNum;
                     break portswitch;
                 }
                 return makePosError(`Write ':${sPort.name} :${sPort.name}' if you intend to connect :${sPort.name} of "${from.def.id}" to :${sPort.name} of "${to.def.id}". There are multiple other ports that each of these could be connected to.`,
@@ -483,7 +583,8 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
                         return makePosError(`Output :${sPort.name} (${tPortLeft}) of "${from.def.id}" can only connect to :${conn[1]} of "${to.def.id}", but it is initialize-only`,
                             sPort.sym, LynxError.INPUT_CONFLICT)
                     }
-                    successPorts = conn;
+                    successPorts = conn.with(0, sPort) as any;
+                    if (refsWithoutName.length > 0) successPorts[1].busNum = refsWithoutName[0]!.busNum;
                     break portswitch;
                 }
                 else if (connWithNameOnLeft.length === 0)
@@ -499,7 +600,8 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
                         sPort.sym, LynxError.INPUT_CONFLICT)
                 }
                 if (connWithNameOnRight.length === 1) {
-                    successPorts = connWithNameOnRight[0]!;
+                    successPorts = connWithNameOnRight[0]!.with(1, sPort) as any;
+                    if (refsWithoutName.length > 0) successPorts[0].busNum = refsWithoutName[0]!.busNum;
                     break portswitch;
                 }
                 else if (connWithNameOnRight.length === 0)
@@ -512,8 +614,8 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
         }
         case 2: {
             // both are specified: they must both exist and have the right type
-            const p1 = refs[0]!;
-            const p2 = refs[1]!;
+            const p1 = refsWithName[0]!;
+            const p2 = refsWithName[1]!;
             const tPortLeft = ports1Obj[p1.name];
             const tPortRight = ports2Obj[p2.name];
             const errors: LynxError[] = [];
@@ -532,7 +634,7 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
             if (errors.length === 2) return new LynxMultiError(errors);
             else if (errors.length === 1) return errors[0]!;
             successPorts = [p1, p2];
-            break portswitch;
+            break;
         }
         default:
             return makePosError("Too many port references", refs[2]!.sym, LynxError.BAD_CONN_SPEC);
@@ -540,35 +642,57 @@ function tryConnect(from: ConcreteNodeDef, to: ConcreteNodeDef, refs: PortRef[],
     // Now: validate the bus numbers (no need to edit the port refs)
     const [pLeft, pRight] = [ports1.get(successPorts[0].name)!, ports2.get(successPorts[1].name)!];
     const [leftIsBus, rightIsBus] = [pLeft.is("bus"), pRight.is("bus")];
+    const refsWithBus = refs.filter(ref => ref.busNum !== undefined);
     const errors: LynxError[] = [];
     if (!leftIsBus && !rightIsBus) {
         // neither can have numbers
-        if (successPorts[0].busNum !== undefined)
-            errors.push(makePosError(`Output :${successPorts[0].sym} of "${from.def.id}" is not a bus`,
-                successPorts[0].busNum, LynxError.TYPE_MISMATCH));
-        if (successPorts[1].busNum !== undefined)
-            errors.push(makePosError(`Input :${successPorts[1].sym} of "${to.def.id}" is not a bus`,
-                successPorts[1].busNum, LynxError.TYPE_MISMATCH));
+        if (needToGuessBusNumberAssignment) {
+            if (refsWithBus.length > 0) {
+                return makePosError(`Number not allowed here. Neither output :${successPorts[0].sym} of "${from.def.id}" nor input :${successPorts[1].sym} of "${to.def.id}" is a bus.`,
+                    refsWithBus[0]!.busNum!, LynxError.BAD_CONN_SPEC);
+            }
+        }
+        else {
+            if (successPorts[0].busNum !== undefined)
+                errors.push(makePosError(`Output :${successPorts[0].sym} of "${from.def.id}" is not a bus`,
+                    successPorts[0].busNum, LynxError.TYPE_MISMATCH));
+            if (successPorts[1].busNum !== undefined)
+                errors.push(makePosError(`Input :${successPorts[1].sym} of "${to.def.id}" is not a bus`,
+                    successPorts[1].busNum, LynxError.TYPE_MISMATCH));
+        }
     }
     else if (leftIsBus && rightIsBus) {
-        if (successPorts[0].busNum !== undefined && successPorts[1].busNum !== undefined) {
-            // ok
-        } else if (successPorts[0].busNum === undefined && successPorts[1].busNum === undefined) {
-            // also ok
+        if (needToGuessBusNumberAssignment) {
+            // just assign them left-right; if there is only one the error condition
+            // below will trigger
+            successPorts[0].busNum = refsWithBus[0]?.busNum;
+            successPorts[1].busNum = refsWithBus[1]?.busNum;
+        }
+        if ((successPorts[0].busNum !== undefined) === (successPorts[1].busNum !== undefined)) {
+            // two or none; ok
         } else
             return makePosError(`Both output :${successPorts[0].sym} of "${from.def.id}" and input :${successPorts[1].sym} of "${to.def.id}" are busses, you must specify two numbers or none`,
                 successPorts[0].busNum ?? successPorts[1].busNum!, LynxError.TYPE_MISMATCH);
     }
     else {
         // one and not the other
-        const [b, nb] = leftIsBus ? [0, 1] : [1, 0];
+        const [b, nb] = (leftIsBus ? [0, 1] : [1, 0]) as [0 | 1, 0 | 1];
         const [iinL, iinR] = leftIsBus ? ["", "not "] : ["not ", ""];
-        if (successPorts[b]!.busNum === undefined)
+        if (needToGuessBusNumberAssignment) {
+            if (refsWithBus.length === 2) {
+                successPorts[0].busNum = refsWithBus[0]?.busNum;
+                successPorts[1].busNum = refsWithBus[1]?.busNum;
+            } else {
+                successPorts[b].busNum = refsWithBus[0]?.busNum;
+            }
+        }
+        if (successPorts[b].busNum === undefined)
             errors.push(makePosError(`Output :${successPorts[0].sym} of "${from.def.id}" is ${iinL}a bus, and input :${successPorts[1].sym} of "${to.def.id}" is ${iinR}a bus, so a number is required here`,
-                successPorts[b]!.sym, LynxError.TYPE_MISMATCH));
-        if (successPorts[nb]!.busNum !== undefined)
+                successPorts[b].sym, LynxError.TYPE_MISMATCH));
+        if (successPorts[nb].busNum !== undefined)
             errors.push(makePosError(`Output :${successPorts[0].sym} of "${from.def.id}" is ${iinL}a bus, and input :${successPorts[1].sym} of "${to.def.id}" is ${iinR}a bus, so a number is not allowed here`,
-                successPorts[nb]!.busNum, LynxError.TYPE_MISMATCH));
+                successPorts[nb].busNum, LynxError.TYPE_MISMATCH));
+
     }
     return errors.length > 0 ? (errors.length === 1 ? errors[0]! : new LynxMultiError(errors)) : successPorts;
 }
@@ -586,4 +710,17 @@ function resolvePortTypes(portSide: Record<string, Port>, concrete: Map<string, 
         out.set(name, new Port(theType, thePort.initialVal, thePort.flags));
     }
     return out;
+}
+
+/*
+to check for multiple-output-into-one-input conflicts
+1. iterate over all nodes' inputs
+2. if it is a normal port, only one output can be outputting into it
+3. if it is a bus, either one bus output without indices can be inputting,
+   or multiple non-bus ports that all have different indices
+*/
+function validateConnections(nodes: ConcreteNodeDef[], links: Connection[]): LynxError[] {
+}
+
+function createAndConnectNodes(nodes: ConcreteNodeDef[], links: Connection[]): LynxNode[] {
 }

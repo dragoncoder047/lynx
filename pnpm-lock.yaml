@@ -18,8 +18,8 @@ importers:
         specifier: ^15.0.11
         version: 15.0.11
       vanilla:
-        specifier: github:dragoncoder047/vanilla#42ac189ae0aac41789e8e8c38cdb56ab857db99a
-        version: https://codeload.github.com/dragoncoder047/vanilla/tar.gz/42ac189ae0aac41789e8e8c38cdb56ab857db99a
+        specifier: github:dragoncoder047/vanilla#400e4ce789aebdcb53c7250a2d4ad6c94f1b193c
+        version: https://codeload.github.com/dragoncoder047/vanilla/tar.gz/400e4ce789aebdcb53c7250a2d4ad6c94f1b193c
     devDependencies:
       esbuild:
         specifier: ^0.25.0
@@ -405,8 +405,8 @@ packages:
   unfetch@5.0.0:
     resolution: {integrity: sha512-3xM2c89siXg0nHvlmYsQ2zkLASvVMBisZm5lF3gFDqfF2xonNStDJyMpvaOBe0a1Edxmqrf2E0HBdmy9QyZaeg==}
 
-  vanilla@https://codeload.github.com/dragoncoder047/vanilla/tar.gz/42ac189ae0aac41789e8e8c38cdb56ab857db99a:
-    resolution: {tarball: https://codeload.github.com/dragoncoder047/vanilla/tar.gz/42ac189ae0aac41789e8e8c38cdb56ab857db99a}
+  vanilla@https://codeload.github.com/dragoncoder047/vanilla/tar.gz/400e4ce789aebdcb53c7250a2d4ad6c94f1b193c:
+    resolution: {tarball: https://codeload.github.com/dragoncoder047/vanilla/tar.gz/400e4ce789aebdcb53c7250a2d4ad6c94f1b193c}
     version: 1.0.0
 
 snapshots:
@@ -709,4 +709,4 @@ snapshots:
 
   unfetch@5.0.0: {}
 
-  vanilla@https://codeload.github.com/dragoncoder047/vanilla/tar.gz/42ac189ae0aac41789e8e8c38cdb56ab857db99a: {}
+  vanilla@https://codeload.github.com/dragoncoder047/vanilla/tar.gz/400e4ce789aebdcb53c7250a2d4ad6c94f1b193c: {}

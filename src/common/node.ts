@@ -3,54 +3,57 @@ import { LynxFlow } from "./flow";
 import { NodeDef } from "./nodeDef";
 import { Generic } from "./types";
 
-interface Link<N extends LynxNode, P extends string> {
-    node: N;
-    port: P;
+/**
+ * the data holding a link going FROM the holder of this node
+ * TO another node
+ */
+interface Link {
+    /**
+     * The node that this one is connected to
+     */
+    node: LynxNode;
+    /**
+     * The port name that this connection goes to
+     */
+    port: string;
+    /**
+     * The bus index on THIS node that the data comes from
+     */
     busNOut: number | undefined;
+    /**
+     * The bus index on the OTHER node that the data goes into
+     */
     busNIn: number | undefined;
 }
-
-type OutLinks<SLN extends string, IPN extends string = any>
-    = Partial<Record<SLN, Link<LynxNode<IPN>, IPN>[]>>;
-type InLinks<SLN extends string, SPN extends string = any>
-    = Partial<Record<SLN, Link<LynxNode<any, SPN>, SPN>[]>>;
 
 export class LynxNode<IPN extends string = any, OPN extends string = any, G extends Generic = any, SK extends string = any> {
     readonly name: string;
     def: NodeDef<IPN, OPN, G, SK>;
     readonly where: { line: number; col: number; };
     #changes: Partial<Record<IPN, any>>;
-    /**
-     * used for sending the right value of output
-     * 
-     * Map of outputID -> list of [node, input value goes into, index of bus output, index of bus input]
-     */
-    readonly linksByOutput: OutLinks<OPN>;
-    /**
-     * used for getting current value of input
-     * 
-     * Map of inputID -> list of [node inputting, output getting value from, index of bus output, index of bus input]
-     */
-    readonly nodesInputting: InLinks<IPN>;
+    readonly connections: Partial<Record<OPN, Link[]>>;
+    readonly inputCurrentValues: Partial<Record<IPN, any>>;
     readonly state: Partial<Record<SK, any>>;
-    readonly currentValues: Partial<Record<OPN, any | any[]>>;
+    readonly outputCurrentValues: Partial<Record<OPN, any | any[]>>;
     constructor(name: string, def: NodeDef<IPN, OPN, G, SK>, where: { line: number; col: number; }) {
         this.name = name;
         this.def = def;
         this.where = where;
         this.#changes = {};
-        this.linksByOutput = {};
-        this.nodesInputting = {};
+        this.connections = {};
+        this.inputCurrentValues = {};
         this.state = {};
-        this.currentValues = {};
+        this.outputCurrentValues = {};
     }
     /**
      * Must be called AFTER {@link LynxNode.connect|.connect()} is called to establish connections
      */
     async setup(app: LynxFlow) {
         // init values for outputs
-        for (var n of Object.keys(this.def!.outputs)) {
-            this.currentValues[n as OPN] = this.def!.outputs[n as OPN].initialVal;
+        for (var n in this.def!.outputs) {
+            const val = this.def!.outputs[n].initialVal;
+            this.outputCurrentValues[n] = val;
+            this.output(n, val);
         }
         await this.def!.setup?.({
             app,
@@ -62,8 +65,8 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
                             async f => [f, await app.feature(f)])
                         : [])),
         });
-        for (var out in this.linksByOutput) {
-            for (var { node, port, busNOut, busNIn } of this.linksByOutput[out]!) {
+        for (var out in this.connections) {
+            for (var { node, port, busNOut, busNIn } of this.connections[out]!) {
                 await this.def!.connect?.({
                     app,
                     nodeFrom: this,
@@ -77,12 +80,17 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         }
     }
     send(name: IPN, value: any, bi: number | undefined) {
-        if (this.def.inputs[name].is("silent")) return;
-        if (this.def.inputs[name].type === "signal") value = true;
+        // assign the value
+        if (bi === undefined) this.inputCurrentValues[name] = value;
+        else {
+            this.inputCurrentValues[name] ??= [];
+            this.inputCurrentValues[name][bi] = value;
+        }
+        // decide whether to mark it as a change
+        if (this.def.inputs[name]?.is("silent")) return;
+        if (this.def.inputs[name]?.type === "signal") value = true;
         if (bi === undefined) this.#changes[name] = value;
-        // the below line relies on the nod being connected and the sending
-        // node updating its currentValues before calling .send()
-        else this.#changes[name] = this.get(name);
+        else this.#changes[name] = (this.inputCurrentValues[name] as any[]).with(bi, value);
     }
     async tick(app: LynxFlow) {
         if (this.def === undefined)
@@ -101,56 +109,43 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         this.#changes = {};
     }
     output(outName: OPN, value?: any, bo?: number) {
-        if (Array.isArray(this.currentValues[outName]) && !Array.isArray(value)) {
+        const isBus = Array.isArray(this.outputCurrentValues[outName]);
+        if (isBus && !Array.isArray(value)) {
             if (bo === undefined)
                 nodeComplain(this, `Output :${outName} is a bus. You must specify an index, or give the whole array at once.`);
-            this.currentValues[outName][bo] = value;
+            this.outputCurrentValues[outName][bo] = value;
         }
-        else this.currentValues[outName] = value;
+        else this.outputCurrentValues[outName] = value;
         if (this.def.outputs[outName].is("silent")) return;
-        const links = this.linksByOutput[outName];
-        if (!links) return;
-        for (var { node, port, busNOut, busNIn } of links) {
-            if (bo === busNOut || bo === undefined)
-                node.send(port, value, busNIn);
+        const connections = this.connections[outName] ?? [];
+        for (var conn of connections) {
+            var theValue = this.outputCurrentValues[outName];
+            // If conn is not for whole array only send if it is the right index input
+            if (isBus && conn.busNOut !== undefined) {
+                // if we just updated the whole thing or the index being pulled from
+                if (bo === undefined || conn.busNOut === bo)
+                    theValue = theValue[conn.busNOut!];
+                // otherwise don't update the node cause it isn't concerned with this update
+                else continue;
+            }
+            // otherwise just send it as is
+            conn.node.send(conn.port, theValue, conn.busNIn);
         }
     }
     get(inName: IPN): any {
-        if (!this.nodesInputting[inName]) return this.def.inputs[inName].initialVal;
-        const inputsHere = this.nodesInputting[inName];
-        if (inputsHere.length === 1 && inputsHere[0]!.busNIn === undefined) {
-            // this is a non-bus input or bus-to-bus link, just get the value output
-            const link = inputsHere[0]!;
-            const ov = link.node.currentValues[link.port];
-            if (link.busNOut !== undefined) return ov[link.busNOut];
-            else return ov;
-        }
-        // we have a bus input, collected from others, so collect the value
-        const busVal = [];
-        for (var { node, port, busNOut, busNIn } of inputsHere) {
-            const ov = node.currentValues[port];
-            if (busNOut !== undefined) busVal[busNIn!] = ov[busNOut];
-            else busVal[busNIn!] = ov;
-        }
-        // nice thing about arrays is that when you set an index,
-        // they update the length automatically
-        return busVal;
+        if (!(inName in this.inputCurrentValues)) return this.def.inputs[inName].initialVal;
+        return this.inputCurrentValues[inName];
     }
     connect<P extends string>(outFrom: OPN, nodeTo: LynxNode<P, any>, inTo: P, busOut?: number, busIn?: number) {
         console.log("connecting", this, outFrom, nodeTo, inTo, busOut, busIn);
         // record connection going out
-        if (!this.linksByOutput[outFrom]) this.linksByOutput[outFrom] = [];
-        this.linksByOutput[outFrom].push({ node: nodeTo, port: inTo, busNOut: busOut, busNIn: busIn });
-        // check to make sure inputting works
-        if (nodeTo.nodesInputting[inTo] !== undefined && nodeTo.nodesInputting[inTo].length === 1) {
-            const { busNOut, busNIn } = nodeTo.nodesInputting[inTo][0]!;
-            if ((busNOut === undefined && busNIn === undefined) || (busNOut === busIn))
-                // should've already been resolved by the connection getter code
-                nodeComplain(this, `Can't connect multiple outputs to the same input :${inTo}`, LynxError.INPUT_CONFLICT);
-        }
-        // record connection going in
-        if (!nodeTo.nodesInputting[inTo]) nodeTo.nodesInputting[inTo] = [];
-        nodeTo.nodesInputting[inTo].push({ node: this, port: outFrom, busNOut: busOut, busNIn: busIn });
+        this.connections[outFrom] ??= [];
+        this.connections[outFrom].push({
+            node: nodeTo,
+            port: inTo,
+            busNIn: busIn,
+            busNOut: busOut
+        });
     }
 }
 

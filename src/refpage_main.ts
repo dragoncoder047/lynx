@@ -1,6 +1,6 @@
 import { get, html, make } from "vanilla";
 import { Feature } from "./common/feature";
-import { Bus, NodeDef } from "./common/nodeDef";
+import { NodeDef } from "./common/nodeDef";
 import { env } from "./lipsShim";
 import { FEATURES, modulesReady, NODES } from "./nodes/all";
 import { repr } from "./common/utils";
@@ -19,7 +19,7 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
     li.append(make("p", {},
         make("code", {},
             "(", def.id,
-            ...Object.entries(def.inputs).flatMap(([name, val]) => val.paramOnly ? [` :${name} <${val.type}>`] : []),
+            ...Object.entries(def.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : []),
             ")")));
     if (def.features) {
         li.append(make("p", {},
@@ -38,7 +38,7 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
     const oRow = make("tr", {}, make("th", {}, "Outputs"));
     ioTab.append(iRow, oRow);
     for (let [input, port] of Object.entries(def.inputs)) {
-        const b = port instanceof Bus ? ", bussed" : "";
+        const b = port.is("bus") ? ", bussed" : "";
         iRow.append(make("td", {},
             make("div", {},
                 make("code", {}, ":", input),
@@ -47,7 +47,7 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
                 "default: ", make("code", {}, repr(port.initialVal).toString()))])));
     }
     for (let [output, port] of Object.entries(def.outputs)) {
-        const b = port instanceof Bus ? ", bussed" : "";
+        const b = port.is("bus") ? ", bussed" : "";
         oRow.append(make("td", {},
             make("div", {},
                 make("code", {}, ":", output),
@@ -65,7 +65,7 @@ const featuresByNodesUsing: Record<string, Set<string>> = {};
 for (var id of Object.keys(nodesById).sort()) {
     nodesContainer.append(make("h3", { id: NODE_ID_PREFIX + id },
         make("code", {}, id)));
-    const ul = make("ul") as HTMLUListElement;
+    const ul = make("ul");
     nodesContainer.append(ul);
     for (var variant of nodesById[id]!) {
         docNode(variant, ul, featuresByNodesUsing);
@@ -73,13 +73,6 @@ for (var id of Object.keys(nodesById).sort()) {
 }
 
 // features
-
-/**
- * @param {string} id
- * @param {Feature} feat
- * @param {HTMLDListElement} el
- * @param {Set<string>} usedBy
- */
 function docFeature(id: string, feat: Feature, el: HTMLDListElement, usedBy: Set<string> = new Set) {
     const dt = make("dt", { id: FEATURE_ID_PREFIX + id }, make("h3", {}, make("code", {}, id)));
     const dl = make("dd", {},
@@ -94,7 +87,7 @@ function docFeature(id: string, feat: Feature, el: HTMLDListElement, usedBy: Set
 const dl = make("dl");
 featuresContainer.append(dl);
 for (var [id, feature] of FEATURES.sort()) {
-    docFeature(id, feature, dl as HTMLDListElement, featuresByNodesUsing[id]!);
+    docFeature(id, feature, dl, featuresByNodesUsing[id]!);
 }
 
 // compensate for the hash not existing when the page loads initially

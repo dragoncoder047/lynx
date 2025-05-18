@@ -3,7 +3,7 @@ var __esm = (fn2, res) => function __init() {
   return fn2 && (res = (0, fn2[__getOwnPropNames(fn2)[0]])(fn2 = 0)), res;
 };
 
-// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+42ac189ae0aac41789e8e8c38cdb56ab857db99a/node_modules/vanilla/vanilla.ts
+// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts
 function make(nameAndClasses, properties, ...children) {
   const [name, ...classes] = nameAndClasses.split(".");
   const el = document.createElement(name);
@@ -24,41 +24,35 @@ function get(id) {
   return document.querySelector(id);
 }
 var init_vanilla = __esm({
-  "node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+42ac189ae0aac41789e8e8c38cdb56ab857db99a/node_modules/vanilla/vanilla.ts"() {
+  "node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts"() {
   }
 });
 
 // src/common/nodeDef.ts
-var Port, Bus;
+var Port;
 var init_nodeDef = __esm({
   "src/common/nodeDef.ts"() {
     "use strict";
     Port = class {
       type;
       initialVal;
-      paramOnly;
-      silent;
-      constructor(type2, initialVal, silent = false, paramOnly) {
+      flags;
+      constructor(type2, initialVal, flags = []) {
         this.type = type2;
-        this.paramOnly = paramOnly;
         this.initialVal = initialVal;
-        this.silent = silent;
+        this.flags = flags;
       }
-    };
-    Bus = class extends Port {
-      // @ts-expect-error
-      initialVal;
-      constructor(type2, initialVal, silent) {
-        super(type2, initialVal, silent);
+      is(pf) {
+        return this.flags.includes(pf);
       }
     };
   }
 });
 
-// src/nodes/flow.ts
-var flow_exports = {};
-var init_flow = __esm({
-  "src/nodes/flow.ts"() {
+// src/nodes/flow_control.ts
+var flow_control_exports = {};
+var init_flow_control = __esm({
+  "src/nodes/flow_control.ts"() {
     "use strict";
     init_nodeDef();
     init_all();
@@ -69,7 +63,7 @@ var init_flow = __esm({
     by the trigger input.`,
       inputs: {
         trigger: new Port("signal", void 0),
-        value: new Port("T", void 0, true)
+        value: new Port("T", void 0, ["silent"])
       },
       outputs: {
         value: new Port("T", void 0)
@@ -160,7 +154,7 @@ var init_simple = __esm({
     init_all();
     defNode({
       id: "log",
-      inputs: { values: new Bus("any", []) },
+      inputs: { values: new Port("any", [], ["bus"]) },
       outputs: {},
       doc: "Logs the values whenever one of them updates.",
       update({ app, node }) {
@@ -259,7 +253,7 @@ var Point;
 var init_otherTypes = __esm({
   "src/common/otherTypes.ts"() {
     "use strict";
-    Point = class {
+    Point = class _Point {
       x;
       y;
       constructor(x, y) {
@@ -269,6 +263,7 @@ var init_otherTypes = __esm({
       toString() {
         return `Point(${this.x}, ${this.y})`;
       }
+      static EMPTY = new _Point(void 0, void 0);
     };
   }
 });
@@ -302,7 +297,7 @@ var init_gps = __esm({
       inputs: {},
       features: ["geolocation"],
       outputs: {
-        pos: new Port("point", new Point(void 0, void 0)),
+        pos: new Port("point", Point.EMPTY),
         altitude: new Port("number", 0),
         heading: new Port("number", 0),
         speed: new Port("number", 0)
@@ -13368,10 +13363,10 @@ var init_unsafe = __esm({
     defNode({
       id: "fn",
       inputs: {
-        inputs: new Bus("any", [])
+        inputs: new Port("any", [], ["bus"])
       },
       outputs: {
-        outputs: new Bus("any", [])
+        outputs: new Port("any", [], ["bus"])
       },
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
@@ -13466,7 +13461,7 @@ var init_all = __esm({
   "src/nodes/all.ts"() {
     "use strict";
     modulesReady = Promise.all([
-      Promise.resolve().then(() => (init_flow(), flow_exports)),
+      Promise.resolve().then(() => (init_flow_control(), flow_control_exports)),
       Promise.resolve().then(() => (init_html(), html_exports)),
       Promise.resolve().then(() => (init_simple(), simple_exports)),
       Promise.resolve().then(() => (init_converters(), converters_exports)),
@@ -13482,7 +13477,6 @@ var init_all = __esm({
 
 // src/refpage_main.ts
 init_vanilla();
-init_nodeDef();
 init_all();
 await init_utils();
 await modulesReady;
@@ -13501,7 +13495,7 @@ function docNode(def, list, fStore) {
       {},
       "(",
       def.id,
-      ...Object.entries(def.inputs).flatMap(([name, val]) => val.paramOnly ? [` :${name} <${val.type}>`] : []),
+      ...Object.entries(def.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : []),
       ")"
     )
   ));
@@ -13534,7 +13528,7 @@ function docNode(def, list, fStore) {
   const oRow = make("tr", {}, make("th", {}, "Outputs"));
   ioTab.append(iRow, oRow);
   for (let [input, port] of Object.entries(def.inputs)) {
-    const b = port instanceof Bus ? ", bussed" : "";
+    const b = port.is("bus") ? ", bussed" : "";
     iRow.append(make(
       "td",
       {},
@@ -13556,7 +13550,7 @@ function docNode(def, list, fStore) {
     ));
   }
   for (let [output, port] of Object.entries(def.outputs)) {
-    const b = port instanceof Bus ? ", bussed" : "";
+    const b = port.is("bus") ? ", bussed" : "";
     oRow.append(make(
       "td",
       {},
