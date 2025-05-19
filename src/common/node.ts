@@ -48,7 +48,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         this.args = params;
     }
     /**
-     * Must be called AFTER {@link LynxNode.connect|.connect()} is called to establish connections
+     * Must be called AFTER {@link connect} is called to establish connections
      */
     async setup(app: LynxFlow) {
         // init values for outputs

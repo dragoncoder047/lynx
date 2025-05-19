@@ -13680,7 +13680,7 @@ var LynxNode = class {
     this.args = params;
   }
   /**
-   * Must be called AFTER {@link LynxNode.connect|.connect()} is called to establish connections
+   * Must be called AFTER {@link connect} is called to establish connections
    */
   async setup(app2) {
     for (var n in this.def.outputs) {
