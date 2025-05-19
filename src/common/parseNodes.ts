@@ -772,7 +772,7 @@ function resolvePortTypes(portSide: Record<string, Port>, concrete: Map<string, 
 /*
 to check for multiple-output-into-one-input conflicts
 1. iterate over all nodes' inputs
-2. if it is a normal port, only one output can be outputting into it
+2. if it is a normal port, only one output can be outputting into it unless it is a eventReceiver port
 3. if it is a bus, either one bus output without indices can be inputting,
    or multiple non-bus ports that all have different indices
 */
@@ -806,7 +806,7 @@ function validateConnections(nodes: Map<Superposition, NodeDef>, links: Connecti
                         }
                     }
                 }
-            } else {
+            } else if (!thisPort.is("eventReceiver")) {
                 if (toThisPort.length > 1) {
                     for (var c of toThisPort) {
                         errors.push(makePosError(`Multiple outputs are connected to input :${i} of node "${def.id}"`,

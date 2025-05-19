@@ -49,7 +49,7 @@ export interface NodeDef<IPN extends string = any, OPN extends string = any, G e
 
 export type TypeNameToType<T> = T extends keyof TypeMap ? TypeMap[T] : T extends (keyof TypeMap)[] ? TypeMap[T[number]] : any;
 
-type PortFlag = "silent" | "bus" | "paramOnly";
+type PortFlag = "silent" | "bus" | "paramOnly" | "eventReceiver";
 export class Port<const T extends TypeSpec | Generic = any> {
     readonly type: T;
     readonly initialVal: TypeNameToType<T>;

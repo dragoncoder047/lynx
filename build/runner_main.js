@@ -14556,7 +14556,7 @@ function validateConnections(nodes, links) {
             }
           }
         }
-      } else {
+      } else if (!thisPort.is("eventReceiver")) {
         if (toThisPort.length > 1) {
           for (var c of toThisPort) {
             errors.push(makePosError(
