@@ -307,6 +307,7 @@ var init_gps = __esm({
     <br>Altitude, heading, and speed may not be available depending on your device.`,
       setup({ app, node, features }) {
         features.geolocation.watch(({ coords }) => {
+          console.log(coords);
           node.output("pos", new Point(coords.longitude, coords.latitude));
           if (coords.altitude !== null) node.output("altitude", coords.altitude);
           if (coords.heading !== null) node.output("heading", coords.heading);
@@ -13368,6 +13369,7 @@ var init_unsafe = __esm({
       outputs: {
         outputs: new Port("any", [], ["bus"])
       },
+      handlesParams: true,
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
     The value of the inputs is available in the variable <code>$inputs</code>,
@@ -13375,7 +13377,7 @@ var init_unsafe = __esm({
     Whatever array the function returns will be passed to the output.
     If <code>#&lt;void></code> (JS <code>undefined</code>) is returned,
     the node will not update its outputs.`,
-      async setup({ node, features }) {
+      async setup({ node, features, args }) {
         const arrayToConsList = user_env.get("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a, d) => new Pair(a, d);
@@ -13384,7 +13386,7 @@ var init_unsafe = __esm({
           s("lambda"),
           cons(
             cons(s("$inputs"), cons(s("$node"), _nil)),
-            arrayToConsList(params)
+            arrayToConsList(args)
           )
         );
         console.log(code.toString());
@@ -13394,13 +13396,14 @@ var init_unsafe = __esm({
         const arrayToConsList = user_env.get("vector->list");
         var value;
         try {
-          value = await node.state.func(arrayToConsList(node.get("inputs", [])), node);
+          value = await node.state.func(arrayToConsList(node.get("inputs")), node);
         } catch (e75) {
           app.error(e75);
           console.error(e75);
           return;
         }
         if (value instanceof Pair) value = consToArray(value);
+        else value = [value];
         if (value !== void 0) node.output("outputs", value);
       }
     });
@@ -13449,6 +13452,29 @@ var init_clock = __esm({
   }
 });
 
+// src/nodes/electronics/logic.ts
+var logic_exports = {};
+var init_logic = __esm({
+  "src/nodes/electronics/logic.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "not",
+      inputs: {
+        input: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs the inverse of its input.",
+      update({ node, changes }) {
+        node.output("output", !changes.input);
+      }
+    });
+  }
+});
+
 // src/nodes/all.ts
 function defNode(node) {
   NODES.push(node);
@@ -13468,7 +13494,8 @@ var init_all = __esm({
       Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
-      Promise.resolve().then(() => (init_clock(), clock_exports))
+      Promise.resolve().then(() => (init_clock(), clock_exports)),
+      Promise.resolve().then(() => (init_logic(), logic_exports))
     ]);
     NODES = [];
     FEATURES = [];

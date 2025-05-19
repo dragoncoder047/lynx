@@ -17,17 +17,18 @@ export async function lint(source: string, editSession: ace.EditSession) {
             console.log("LIPS Error on line", e.__line__, e.message, e.__offset__);
             errors.push(new LynxError(e.message, Infinity, (e.__line__ || 0) + 1, e.__col__ || 0));
         }
-        else if (e instanceof LynxError) errors.push(e);
         else if (e instanceof LynxMultiError) errors.push(...e.subErrors);
+        else if (e instanceof LynxError) errors.push(e);
         else throw e;
     }
+    console.warn(errors);
     showLint(editSession, errors);
     highlightNodes(editSession, nodes!);
 }
 
 function showLint(editSession: ace.EditSession, errors: LynxError[]) {
     // find only highest priority errors
-    const onlySev = onlyWorstErrors(errors);
+    const onlySev = errors//onlyWorstErrors(errors);
     // show lint errors
     editSession.clearAnnotations();
     editSession.setAnnotations(onlySev.map(err => {

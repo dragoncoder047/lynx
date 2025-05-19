@@ -12,6 +12,7 @@ export const modulesReady = Promise.all([
     import("./features/gps"),
     import("./features/unsafe"),
     import("./electronics/clock"),
+    import("./electronics/logic"),
 ]);
 
 export const NODES: NodeDef[] = [];

@@ -13349,6 +13349,7 @@ var init_gps = __esm({
     <br>Altitude, heading, and speed may not be available depending on your device.`,
       setup({ app: app2, node, features }) {
         features.geolocation.watch(({ coords }) => {
+          console.log(coords);
           node.output("pos", new Point(coords.longitude, coords.latitude));
           if (coords.altitude !== null) node.output("altitude", coords.altitude);
           if (coords.heading !== null) node.output("heading", coords.heading);
@@ -13410,6 +13411,7 @@ var init_unsafe = __esm({
       outputs: {
         outputs: new Port("any", [], ["bus"])
       },
+      handlesParams: true,
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
     The value of the inputs is available in the variable <code>$inputs</code>,
@@ -13417,7 +13419,7 @@ var init_unsafe = __esm({
     Whatever array the function returns will be passed to the output.
     If <code>#&lt;void></code> (JS <code>undefined</code>) is returned,
     the node will not update its outputs.`,
-      async setup({ node, features }) {
+      async setup({ node, features, args }) {
         const arrayToConsList = user_env.get("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a, d) => new Pair(a, d);
@@ -13426,7 +13428,7 @@ var init_unsafe = __esm({
           s("lambda"),
           cons(
             cons(s("$inputs"), cons(s("$node"), _nil)),
-            arrayToConsList(params)
+            arrayToConsList(args)
           )
         );
         console.log(code.toString());
@@ -13436,13 +13438,14 @@ var init_unsafe = __esm({
         const arrayToConsList = user_env.get("vector->list");
         var value;
         try {
-          value = await node.state.func(arrayToConsList(node.get("inputs", [])), node);
+          value = await node.state.func(arrayToConsList(node.get("inputs")), node);
         } catch (e75) {
           app2.error(e75);
           console.error(e75);
           return;
         }
         if (value instanceof Pair) value = consToArray(value);
+        else value = [value];
         if (value !== void 0) node.output("outputs", value);
       }
     });
@@ -13491,6 +13494,29 @@ var init_clock = __esm({
   }
 });
 
+// src/nodes/electronics/logic.ts
+var logic_exports = {};
+var init_logic = __esm({
+  "src/nodes/electronics/logic.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "not",
+      inputs: {
+        input: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs the inverse of its input.",
+      update({ node, changes }) {
+        node.output("output", !changes.input);
+      }
+    });
+  }
+});
+
 // src/nodes/all.ts
 async function loadAllNodes(app2) {
   await modulesReady;
@@ -13521,7 +13547,8 @@ var init_all = __esm({
       Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
-      Promise.resolve().then(() => (init_clock(), clock_exports))
+      Promise.resolve().then(() => (init_clock(), clock_exports)),
+      Promise.resolve().then(() => (init_logic(), logic_exports))
     ]);
     NODES = [];
     FEATURES = [];
@@ -13639,7 +13666,8 @@ var LynxNode = class {
   inputCurrentValues;
   state;
   outputCurrentValues;
-  constructor(name, def, where) {
+  args;
+  constructor(name, def, where, params) {
     this.name = name;
     this.def = def;
     this.where = where;
@@ -13648,6 +13676,7 @@ var LynxNode = class {
     this.inputCurrentValues = {};
     this.state = {};
     this.outputCurrentValues = {};
+    this.args = params;
   }
   /**
    * Must be called AFTER {@link LynxNode.connect|.connect()} is called to establish connections
@@ -13667,7 +13696,8 @@ var LynxNode = class {
             async (f) => [f, await app2.feature(f)]
           ) : []
         )
-      )
+      ),
+      args: this.args
     });
     for (var out in this.connections) {
       for (var { node, port, busNOut, busNIn } of this.connections[out]) {
@@ -13683,13 +13713,13 @@ var LynxNode = class {
       }
     }
   }
-  send(name, value, bi) {
+  send(name, value, bi, silent) {
     if (bi === void 0) this.inputCurrentValues[name] = value;
     else {
       this.inputCurrentValues[name] ??= [];
       this.inputCurrentValues[name][bi] = value;
     }
-    if (this.def.inputs[name]?.is("silent")) return;
+    if (this.def.inputs[name]?.is("silent") || silent) return;
     if (this.def.inputs[name]?.type === "signal") value = true;
     if (bi === void 0) this.#changes[name] = value;
     else this.#changes[name] = this.inputCurrentValues[name].with(bi, value);
@@ -13717,7 +13747,6 @@ var LynxNode = class {
         nodeComplain(this, `Output :${outName} is a bus. You must specify an index, or give the whole array at once.`);
       this.outputCurrentValues[outName][bo] = value;
     } else this.outputCurrentValues[outName] = value;
-    if (this.def.outputs[outName].is("silent")) return;
     const connections = this.connections[outName] ?? [];
     for (var conn of connections) {
       var theValue = this.outputCurrentValues[outName];
@@ -13726,7 +13755,8 @@ var LynxNode = class {
           theValue = theValue[conn.busNOut];
         else continue;
       }
-      conn.node.send(conn.port, theValue, conn.busNIn);
+      console.log("sending", theValue, "to", conn.port);
+      conn.node.send(conn.port, theValue, conn.busNIn, this.def.outputs[outName].is("silent"));
     }
   }
   get(inName) {
@@ -13850,8 +13880,11 @@ function createNodes(app2, forms) {
         }
         if (rest.car instanceof Pair)
           makeHON(app2, rest);
-        else if (!METADATA_NAME_RE.test(rest.car.toString()))
-          namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
+        else if (!METADATA_NAME_RE.test(rest.car.toString())) {
+          if (rest.cdr.car instanceof Pair)
+            namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
+          else errors.push(notValidHere(rest.cdr.car));
+        }
         break;
       case LINK_COMMAND_NAME:
         const specialRes = processSpecialsAndPortrefs(consToArray(rest));
@@ -13873,7 +13906,8 @@ function createNodes(app2, forms) {
   const virtual = getParamImplicitNodes(superRes.superpos);
   superRes.superpos.push(...virtual.nodes);
   superRes.connections.push(...virtual.links);
-  errors.push(...superRes.errors, ...virtual.errors);
+  errors.push(...superRes.errors);
+  errors.push(...virtual.errors);
   const sSet = new Set(superRes.superpos);
   const cSet = new Set(superRes.connections);
   const final = wfc(sSet, cSet);
@@ -13962,6 +13996,7 @@ function getParamImplicitNodes(writtenNodes) {
   const nodes = [];
   const links = [];
   for (var s of writtenNodes) {
+    if ([...s.concretes].some((c) => c.def.handlesParams)) continue;
     const res = implicit1(s);
     errors.push(...res.errors);
     nodes.push(...res.nodes);
@@ -14008,6 +14043,7 @@ function createImplicitSuperposition(a, sym, value, type2) {
   return {
     sym,
     asWritten: new NodeAsWritten(a.name, []),
+    args: [],
     concretes: /* @__PURE__ */ new Set([{
       sym,
       genericChoices: /* @__PURE__ */ new Map(),
@@ -14015,7 +14051,7 @@ function createImplicitSuperposition(a, sym, value, type2) {
         id: `__implicit_arg_${name}__`,
         inputs: {},
         outputs: {
-          value: new Port(type2, value, [])
+          value: new Port(type2, value, ["silent"])
         },
         doc: `Implicit node created by init arg :${name}`,
         setup({ node }) {
@@ -14072,7 +14108,7 @@ function getSuperpositions(chains, allNDs) {
 function notValidHere(what) {
   const astNode = what instanceof PortRef ? what.sym : what;
   return makePosError(
-    `${astNode} not valid here`,
+    `${repr2(astNode)} not valid here`,
     astNode,
     LynxError.BAD_SYNTAX
   );
@@ -14090,6 +14126,7 @@ function createInitialSuperpos(naw, allNDs) {
   return {
     super: {
       sym: naw.name,
+      args: naw.args,
       asWritten: naw,
       concretes: new Set(getConcretes(matchingDefs, naw.name))
     },
@@ -14496,7 +14533,7 @@ function validateConnections(nodes, links) {
 function createAndConnectNodes(nodes, links) {
   const sToI = /* @__PURE__ */ new Map();
   for (var [n, def] of nodes) {
-    sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__, col: n.sym.__col__ }));
+    sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__, col: n.sym.__col__ }, n.args));
   }
   for (var link of links) {
     const { from, to, inPort, outPort } = link;
@@ -14635,8 +14672,8 @@ async function loadFromHash() {
   };
 }
 async function loadFromLocalStorage() {
-  const params2 = new URLSearchParams(location.search);
-  const key = params2.get("saved");
+  const params = new URLSearchParams(location.search);
+  const key = params.get("saved");
   if (!localStorage.getItem(LOCAL_SAVE_KEY)) localStorage[LOCAL_SAVE_KEY] = "{}";
   const store = JSON.parse(localStorage[LOCAL_SAVE_KEY]);
   if (!key) return;
@@ -14649,8 +14686,8 @@ async function loadFromLocalStorage() {
   };
 }
 async function loadFromURL() {
-  const params2 = new URLSearchParams(location.search);
-  const url = params2.get("url");
+  const params = new URLSearchParams(location.search);
+  const url = params.get("url");
   if (!url) return;
   try {
     const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
@@ -14666,8 +14703,8 @@ async function loadFromURL() {
   }
 }
 async function loadFromExample() {
-  const params2 = new URLSearchParams(location.search);
-  const key = params2.get("example");
+  const params = new URLSearchParams(location.search);
+  const key = params.get("example");
   if (!key) return;
   const response = await fetch(import.meta.resolve(`../examples/files/${key}${LYNX_FILE_EXT}`), { cache: "reload" });
   if (response.status === 404)

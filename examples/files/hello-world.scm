@@ -12,8 +12,8 @@
 
 ; Hover over each of the nodes (button, edges, value, and log)
 ; below to see what they do.
-(chain (button "Click me!") :pressed
+(chain (button :text "Click me!") :pressed
        (edges) :rising
-       (value "World!") (log "Hello, ")
-       ~ @button :hovering (edges) :rising (log "You are hovering on the button!")
-       ~ @edges :falling (log "You stopped hovering the button!"))
+       (value :value "World!") ::1 (log ::0 "Hello, ")
+       ~ @button :hovering (edges) :rising ::1 (log ::0 "You are hovering on the button!")
+       ~ @edges :falling ::1 (log ::0 "You stopped hovering the button!"))

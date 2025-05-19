@@ -35,6 +35,7 @@ defNode({
     <br>Altitude, heading, and speed may not be available depending on your device.`,
     setup({ app, node, features }) {
         features.geolocation!.watch(({ coords }) => {
+            console.log(coords);
             node.output("pos", new Point(coords.longitude, coords.latitude));
             if (coords.altitude !== null) node.output("altitude", coords.altitude);
             if (coords.heading !== null) node.output("heading", coords.heading);

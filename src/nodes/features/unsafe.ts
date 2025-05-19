@@ -29,6 +29,7 @@ defNode({
     outputs: {
         outputs: new Port("any", [], ["bus"]),
     },
+    handlesParams: true,
     features: ["unsafe-code"],
     doc: `Transforms the input and output values using a Scheme function.
     The value of the inputs is available in the variable <code>$inputs</code>,
@@ -36,7 +37,7 @@ defNode({
     Whatever array the function returns will be passed to the output.
     If <code>#&lt;void></code> (JS <code>undefined</code>) is returned,
     the node will not update its outputs.`,
-    async setup({ node, features }) {
+    async setup({ node, features, args }) {
         const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a: any, d: any) => new Pair(a, d);
@@ -45,7 +46,7 @@ defNode({
             s("lambda"),
             cons(
                 cons(s("$inputs"), cons(s("$node"), nil)),
-                arrayToConsList(params)));
+                arrayToConsList(args)));
         console.log(code.toString());
         node.state.func = (await exec(code))[0];
     },
@@ -53,13 +54,14 @@ defNode({
         const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         var value;
         try {
-            value = await node.state.func(arrayToConsList(node.get("inputs", [])), node);
+            value = await node.state.func(arrayToConsList(node.get("inputs")), node);
         } catch (e: any) {
             app.error(e);
             console.error(e);
             return;
         }
         if (value instanceof Pair) value = consToArray(value);
+        else value = [value];
         if (value !== undefined) node.output("outputs", value);
     }
 });

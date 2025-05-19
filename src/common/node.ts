@@ -35,7 +35,8 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
     readonly inputCurrentValues: Partial<Record<IPN, any>>;
     readonly state: Partial<Record<SK, any>>;
     readonly outputCurrentValues: Partial<Record<OPN, any | any[]>>;
-    constructor(name: string, def: NodeDef<IPN, OPN, G, SK>, where: { line: number; col: number; }) {
+    readonly args: any;
+    constructor(name: string, def: NodeDef<IPN, OPN, G, SK>, where: { line: number; col: number; }, params: any) {
         this.name = name;
         this.def = def;
         this.where = where;
@@ -44,6 +45,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         this.inputCurrentValues = {};
         this.state = {};
         this.outputCurrentValues = {};
+        this.args = params;
     }
     /**
      * Must be called AFTER {@link LynxNode.connect|.connect()} is called to establish connections
@@ -64,6 +66,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
                         ? this.def!.features.map(
                             async f => [f, await app.feature(f)])
                         : [])),
+            args: this.args
         });
         for (var out in this.connections) {
             for (var { node, port, busNOut, busNIn } of this.connections[out]!) {
@@ -79,7 +82,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             }
         }
     }
-    send(name: IPN, value: any, bi: number | undefined) {
+    send(name: IPN, value: any, bi: number | undefined, silent?: boolean) {
         // assign the value
         if (bi === undefined) this.inputCurrentValues[name] = value;
         else {
@@ -87,7 +90,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             this.inputCurrentValues[name][bi] = value;
         }
         // decide whether to mark it as a change
-        if (this.def.inputs[name]?.is("silent")) return;
+        if (this.def.inputs[name]?.is("silent") || silent) return;
         if (this.def.inputs[name]?.type === "signal") value = true;
         if (bi === undefined) this.#changes[name] = value;
         else this.#changes[name] = (this.inputCurrentValues[name] as any[]).with(bi, value);
@@ -116,7 +119,6 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             this.outputCurrentValues[outName][bo] = value;
         }
         else this.outputCurrentValues[outName] = value;
-        if (this.def.outputs[outName].is("silent")) return;
         const connections = this.connections[outName] ?? [];
         for (var conn of connections) {
             var theValue = this.outputCurrentValues[outName];
@@ -129,7 +131,8 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
                 else continue;
             }
             // otherwise just send it as is
-            conn.node.send(conn.port, theValue, conn.busNIn);
+            console.log("sending", theValue, "to", conn.port);
+            conn.node.send(conn.port, theValue, conn.busNIn, this.def.outputs[outName].is("silent"));
         }
     }
     get(inName: IPN): any {

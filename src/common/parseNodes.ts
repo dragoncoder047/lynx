@@ -32,6 +32,7 @@ interface Superposition {
     readonly sym: LSymbol;
     readonly concretes: Set<ConcreteNodeDef>;
     readonly asWritten: NodeAsWritten;
+    readonly args: any[],
 }
 
 class NodeAsWritten {
@@ -94,8 +95,11 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
                 }
                 if (rest.car instanceof Pair)
                     makeHON(app, rest);
-                else if (!METADATA_NAME_RE.test(rest.car.toString()))
-                    namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
+                else if (!METADATA_NAME_RE.test(rest.car.toString())) {
+                    if (rest.cdr.car instanceof Pair)
+                        namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
+                    else errors.push(notValidHere(rest.cdr.car));
+                }
                 break;
             case LINK_COMMAND_NAME:
                 const specialRes = processSpecialsAndPortrefs(consToArray(rest));
@@ -114,7 +118,8 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
     const virtual = getParamImplicitNodes(superRes.superpos);
     superRes.superpos.push(...virtual.nodes);
     superRes.connections.push(...virtual.links);
-    errors.push(...superRes.errors, ...virtual.errors);
+    errors.push(...superRes.errors);
+    errors.push(...virtual.errors);
     const sSet = new Set(superRes.superpos);
     const cSet = new Set(superRes.connections);
     const final = wfc(sSet, cSet);
@@ -213,6 +218,9 @@ function getParamImplicitNodes(writtenNodes: Superposition[]): { nodes: Superpos
     const nodes: Superposition[] = [];
     const links: ConnectionSpec[] = [];
     for (var s of writtenNodes) {
+        // TODO: don't do this, only mark the implicit nodes
+        // and remove them if the handlesParams def doesn't get picked
+        if ([...s.concretes].some(c => c.def.handlesParams)) continue;
         const res = implicit1(s);
         errors.push(...res.errors);
         nodes.push(...res.nodes);
@@ -256,6 +264,7 @@ function createImplicitSuperposition(a: NodeAsWritten, sym: LSymbol, value: any,
     return {
         sym,
         asWritten: new NodeAsWritten(a.name, []),
+        args: [],
         concretes: new Set([{
             sym,
             genericChoices: new Map,
@@ -263,7 +272,7 @@ function createImplicitSuperposition(a: NodeAsWritten, sym: LSymbol, value: any,
                 id: `__implicit_arg_${name}__`,
                 inputs: {},
                 outputs: {
-                    value: new Port(type, value, [])
+                    value: new Port(type, value, ["silent"])
                 },
                 doc: `Implicit node created by init arg :${name}`,
                 setup({ node }) {
@@ -322,7 +331,7 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
 
 function notValidHere(what: PortRef | LNumber | LSymbol): LynxError {
     const astNode = what instanceof PortRef ? what.sym : what;
-    return makePosError(`${astNode} not valid here`,
+    return makePosError(`${repr(astNode)} not valid here`,
         astNode, LynxError.BAD_SYNTAX);
 }
 
@@ -336,6 +345,7 @@ function createInitialSuperpos(naw: NodeAsWritten, allNDs: NodeDef[]): { super: 
     return {
         super: {
             sym: naw.name,
+            args: naw.args,
             asWritten: naw,
             concretes: new Set(getConcretes(matchingDefs, naw.name))
         },
@@ -763,7 +773,7 @@ function validateConnections(nodes: Map<Superposition, NodeDef>, links: Connecti
 function createAndConnectNodes(nodes: Map<Superposition, NodeDef>, links: Set<Connection>): LynxNode[] {
     const sToI: Map<Superposition, LynxNode> = new Map;
     for (var [n, def] of nodes) {
-        sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__!, col: n.sym.__col__! }));
+        sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__!, col: n.sym.__col__! }, n.args));
     }
     // connect them
     for (var link of links) {
