@@ -13439,10 +13439,12 @@ var init_clock = __esm({
         }
       },
       tick({ node }) {
-        const dt = Date.now() - node.state.lastTickTime;
+        const now = performance.now();
+        const dt = now - node.state.lastTickTime;
         if (!node.get("paused")) {
           node.state.elapsedTime += dt;
         }
+        node.state.lastTickTime = now;
         if (node.state.elapsedTime >= node.get("interval")) {
           node.state.elapsedTime = 0;
           node.output("clock");

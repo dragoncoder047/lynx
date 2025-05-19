@@ -56,7 +56,6 @@ export function makePosError(message: string, offending: WithMetadata, severity:
     const { __line__, __col__ } = offending;
     const len = (offending?.valueOf() as any)?.length ?? 1;
     const line = __line__ !== undefined ? __line__ + 1 : undefined;
-    console.trace("Error ", message, "from line", line, "col", __col__, "length", len);
     return new LynxError(message, severity, line!, __col__!, len);
 }
 

@@ -120,6 +120,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         }
         else this.outputCurrentValues[outName] = value;
         const connections = this.connections[outName] ?? [];
+        const silent = this.def.outputs[outName].is("silent");
         for (var conn of connections) {
             var theValue = this.outputCurrentValues[outName];
             // If conn is not for whole array only send if it is the right index input
@@ -131,8 +132,8 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
                 else continue;
             }
             // otherwise just send it as is
-            console.log("sending", theValue, "to", conn.port);
-            conn.node.send(conn.port, theValue, conn.busNIn, this.def.outputs[outName].is("silent"));
+            console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn);
+            conn.node.send(conn.port, theValue, conn.busNIn, silent);
         }
     }
     get(inName: IPN): any {

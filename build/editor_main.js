@@ -36142,10 +36142,12 @@ var init_clock = __esm({
         }
       },
       tick({ node }) {
-        const dt = Date.now() - node.state.lastTickTime;
+        const now = performance.now();
+        const dt = now - node.state.lastTickTime;
         if (!node.get("paused")) {
           node.state.elapsedTime += dt;
         }
+        node.state.lastTickTime = now;
         if (node.state.elapsedTime >= node.get("interval")) {
           node.state.elapsedTime = 0;
           node.output("clock");
@@ -36467,7 +36469,6 @@ function makePosError(message, offending, severity = 1) {
   const { __line__, __col__ } = offending;
   const len = offending?.valueOf()?.length ?? 1;
   const line = __line__ !== void 0 ? __line__ + 1 : void 0;
-  console.trace("Error ", message, "from line", line, "col", __col__, "length", len);
   return new LynxError(message, severity, line, __col__, len);
 }
 
@@ -36563,6 +36564,7 @@ var LynxNode = class {
       this.outputCurrentValues[outName][bo] = value;
     } else this.outputCurrentValues[outName] = value;
     const connections = this.connections[outName] ?? [];
+    const silent = this.def.outputs[outName].is("silent");
     for (var conn of connections) {
       var theValue = this.outputCurrentValues[outName];
       if (isBus && conn.busNOut !== void 0) {
@@ -36570,8 +36572,8 @@ var LynxNode = class {
           theValue = theValue[conn.busNOut];
         else continue;
       }
-      console.log("sending", theValue, "to", conn.port);
-      conn.node.send(conn.port, theValue, conn.busNIn, this.def.outputs[outName].is("silent"));
+      console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn);
+      conn.node.send(conn.port, theValue, conn.busNIn, silent);
     }
   }
   get(inName) {
@@ -36731,6 +36733,7 @@ function createNodes(app, forms) {
   if (errors.length > 0) {
     throw new LynxMultiError(errors);
   }
+  console.info(final);
   return createAndConnectNodes(final.realNodes, final.connections);
 }
 function makeHON(app, def) {
@@ -36868,10 +36871,7 @@ function createImplicitSuperposition(a, sym, value, type2) {
         outputs: {
           value: new Port(type2, value, ["silent"])
         },
-        doc: `Implicit node created by init arg :${name}`,
-        setup({ node }) {
-          node.output("value", value);
-        }
+        doc: `Implicit node created by init arg :${name}`
       }
     }])
   };
@@ -36886,10 +36886,9 @@ function getSuperpositions(chains, allNDs) {
       errors.push(notValidHere(chain[i]));
       i++;
     }
-    const res = createInitialSuperpos(chain[i], allNDs);
+    const res = createOrGetCached(seen, chain[i], allNDs);
     var prev = res.super;
     errors.push(...res.errors);
-    seen.set(chain[i], prev);
     while (i < chain.length) {
       j = chain.findIndex((v, j2) => j2 > i && v instanceof NodeAsWritten);
       if (j === -1) {
@@ -36900,14 +36899,9 @@ function getSuperpositions(chains, allNDs) {
       }
       const curNAW = chain[j];
       const slice = chain.slice(i + 1, j);
-      var cur;
-      if (seen.has(curNAW)) cur = seen.get(curNAW);
-      else {
-        const res2 = createInitialSuperpos(curNAW, allNDs);
-        cur = res2.super;
-        errors.push(...res2.errors);
-      }
-      seen.set(curNAW, cur);
+      const res2 = createOrGetCached(seen, curNAW, allNDs);
+      const cur = res2.super;
+      errors.push(...res2.errors);
       connections.push({
         from: prev,
         to: cur,
@@ -36919,6 +36913,18 @@ function getSuperpositions(chains, allNDs) {
     }
   }
   return { superpos: [...seen.values()], connections, errors };
+}
+function createOrGetCached(s, n, d) {
+  var ret;
+  var errors = [];
+  if (s.has(n)) ret = s.get(n);
+  else {
+    const res = createInitialSuperpos(n, d);
+    ret = res.super;
+    errors = res.errors;
+    s.set(n, ret);
+  }
+  return { errors, super: ret };
 }
 function notValidHere(what) {
   const astNode = what instanceof PortRef ? what.sym : what;
@@ -36972,12 +36978,14 @@ function wfc(nodes, connections) {
   const connCache = /* @__PURE__ */ new Map();
   const superCache = /* @__PURE__ */ new Map();
   const errors = [];
+  console.log(nodes);
   for (var conn of connections) {
     for (var c1 of conn.from.concretes) {
       for (var c2 of conn.to.concretes) {
         var res = getCache(connCache, c1, c2, conn);
         if (res === void 0) {
           res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
+          console.log(c1, c2, res);
           putCache(connCache, c1, c2, conn, res);
           saveSuperCache(superCache, nodes, c1, res);
           saveSuperCache(superCache, nodes, c2, res);
@@ -36986,9 +36994,13 @@ function wfc(nodes, connections) {
     }
   }
   const realNodes = /* @__PURE__ */ new Map();
-  const realConnections = /* @__PURE__ */ new Set();
+  const realConnections = [];
   for (var node of nodes) {
-    if (node.concretes.size < 1) continue;
+    console.log("processing node id", node.sym.__name__);
+    if (node.concretes.size < 1) {
+      console.log("--> no concretes");
+      continue;
+    }
     const res2 = superCache.get(node);
     if (res2 === void 0) {
       if (new Set([...node.concretes].map((c) => c.def)).size > 1) {
@@ -36998,17 +37010,21 @@ function wfc(nodes, connections) {
           LynxError.BAD_CONN_SPEC
         ));
       } else realNodes.set(node, [...node.concretes][0].def);
+      console.log("--> isolated node");
       continue;
     }
-    const csNoErrors = [...res2].flatMap(([c, r]) => r.some((r2) => r2 instanceof LynxError) ? [] : [c]);
+    const csNoErrors = [...res2].flatMap(([c, r]) => r.every((r2) => r2 instanceof LynxError) ? [] : [c]);
     if (csNoErrors.length === 0) {
       errors.push(...[...res2].flatMap(([_, r]) => r.filter((r2) => r2 instanceof LynxError)));
+      console.log("--> all concretes had errors");
       continue;
     }
     const defsSet = new Set(csNoErrors.map((c) => c.def));
     const firstConcrete = csNoErrors[0];
     const firstDef = firstConcrete.def;
+    console.log(node, defsSet);
     if (defsSet.size > 1) {
+      console.log("--> couldn't resolve variant");
       errors.push(makePosError(
         `Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
         node.sym,
@@ -37016,23 +37032,28 @@ function wfc(nodes, connections) {
       ));
       continue;
     }
+    console.log("--> success");
     realNodes.set(node, firstDef);
   }
   for (var conn of connections) {
     const tgtLeft = realNodes.get(conn.from);
     const tgtRight = realNodes.get(conn.to);
-    if (!tgtLeft || !tgtRight) continue;
-    const fc = [...conn.from.concretes].find((c) => tgtLeft === c.def);
-    const tc = [...conn.to.concretes].find((c) => tgtRight === c.def);
+    if (tgtLeft === void 0 || tgtRight === void 0) {
+      continue;
+    }
+    const pair = findSuccessfulConcretePair(conn.from, tgtLeft, conn.to, tgtRight, conn, connCache);
+    if (!pair) continue;
+    const { fc, tc } = pair;
     const res2 = getCache(connCache, fc, tc, conn);
     if (res2 instanceof LynxError) {
+      console.log("wtf", fc, tc, conn.from.sym.__name__, conn.to.sym.__name__);
       continue;
     }
     if (res2 === void 0) {
       console.error(conn.from, conn.to);
-      throw new RangeError("unreachable nope");
+      throw new RangeError("unreachable");
     }
-    realConnections.add({
+    realConnections.push({
       from: conn.from,
       to: conn.to,
       outPort: res2[0],
@@ -37067,6 +37088,19 @@ function putCache(cache, left, right, conn, value) {
 }
 function getCache(cache, left, right, conn) {
   return cache.get(left)?.get(right)?.get(conn);
+}
+function findSuccessfulConcretePair(fromSuper, fromDef, toSuper, toDef, conn, connCache) {
+  for (const fc of fromSuper.concretes) {
+    if (fc.def !== fromDef) continue;
+    for (const tc of toSuper.concretes) {
+      if (tc.def !== toDef) continue;
+      const res = getCache(connCache, fc, tc, conn);
+      if (res && !(res instanceof LynxError)) {
+        return { fc, tc };
+      }
+    }
+  }
+  return void 0;
 }
 function tryConnect(from, to, refs, isImplicitParamConnection) {
   const typeChoices = [];
@@ -37514,6 +37548,7 @@ editor.setTheme({
 });
 editor.commands.removeCommand("showSettingsMenu", false);
 editor.session.setOption("wrap", "free");
+editor.session.setOption("wrap", "off");
 var changeText = function(text) {
   changeText.isRunning = true;
   try {

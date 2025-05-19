@@ -128,6 +128,7 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
     if (errors.length > 0) {
         throw new LynxMultiError(errors);
     }
+    console.info(final);
     return createAndConnectNodes(final.realNodes, final.connections);
 }
 
@@ -275,9 +276,6 @@ function createImplicitSuperposition(a: NodeAsWritten, sym: LSymbol, value: any,
                     value: new Port(type, value, ["silent"])
                 },
                 doc: `Implicit node created by init arg :${name}`,
-                setup({ node }) {
-                    node.output("value", value);
-                }
             }
         }])
     }
@@ -293,10 +291,9 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
             errors.push(notValidHere(chain[i] as any));
             i++;
         }
-        const res = createInitialSuperpos(chain[i] as any, allNDs);
+        const res = createOrGetCached(seen, chain[i] as any, allNDs);
         var prev = res.super;
         errors.push(...res.errors);
-        seen.set(chain[i] as any, prev);
         while (i < chain.length) {
             j = chain.findIndex((v, j) => j > i && v instanceof NodeAsWritten);
             if (j === -1) {
@@ -307,15 +304,10 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
             }
             const curNAW = chain[j] as NodeAsWritten;
             const slice = chain.slice(i + 1, j);
-            var cur: Superposition;
             // use cached version for this multiple-referenced node if it exists
-            if (seen.has(curNAW)) cur = seen.get(curNAW)!;
-            else {
-                const res = createInitialSuperpos(curNAW, allNDs);
-                cur = res.super;
-                errors.push(...res.errors);
-            }
-            seen.set(curNAW, cur);
+            const res = createOrGetCached(seen, curNAW, allNDs);
+            const cur = res.super;
+            errors.push(...res.errors);
             connections.push({
                 from: prev,
                 to: cur,
@@ -327,6 +319,19 @@ function getSuperpositions(chains: Chain[], allNDs: NodeDef[]): { superpos: Supe
         }
     }
     return { superpos: [...seen.values()], connections, errors };
+}
+
+function createOrGetCached(s: Map<NodeAsWritten, Superposition>, n: NodeAsWritten, d: NodeDef[]): { errors: LynxError[], super: Superposition } {
+    var ret: Superposition;
+    var errors: LynxError[] = [];
+    if (s.has(n)) ret = s.get(n)!;
+    else {
+        const res = createInitialSuperpos(n, d);
+        ret = res.super;
+        errors = res.errors;
+        s.set(n, ret);
+    }
+    return { errors, super: ret };
 }
 
 function notValidHere(what: PortRef | LNumber | LSymbol): LynxError {
@@ -402,16 +407,18 @@ type SuperCache = Map<Superposition, Map<ConcreteNodeDef, ConnectResult[]>>;
 /**
  * mutates the input sets
  */
-function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { connections: Set<Connection>, realNodes: Map<Superposition, NodeDef>, errors: LynxError[] } {
+function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { connections: Connection[], realNodes: Map<Superposition, NodeDef>, errors: LynxError[] } {
     const connCache: ConnCache = new Map;
     const superCache: SuperCache = new Map;
     const errors: LynxError[] = [];
+    console.log(nodes);
     for (var conn of connections) {
         for (var c1 of conn.from.concretes) {
             for (var c2 of conn.to.concretes) {
                 var res = getCache(connCache, c1, c2, conn);
                 if (res === undefined) {
                     res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
+                    console.log(c1, c2, res);
                     putCache(connCache, c1, c2, conn, res);
                     saveSuperCache(superCache, nodes, c1, res);
                     saveSuperCache(superCache, nodes, c2, res);
@@ -421,9 +428,13 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
     }
     // all good now validate
     const realNodes: Map<Superposition, NodeDef> = new Map;
-    const realConnections: Set<Connection> = new Set;
+    const realConnections: Connection[] = [];
     for (var node of nodes) {
-        if (node.concretes.size < 1) continue;
+        console.log("processing node id", node.sym.__name__);
+        if (node.concretes.size < 1) {
+            console.log("--> no concretes");
+            continue;
+        }
         const res = superCache.get(node);
         if (res === undefined) {
             // isolated node with no connections
@@ -432,39 +443,49 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
                 errors.push(makePosError(`Could not resolve variant of isolated node "${node.asWritten.name}". Try connecting something to it.`,
                     node.sym, LynxError.BAD_CONN_SPEC));
             } else realNodes.set(node, [...node.concretes][0]!.def);
+            console.log("--> isolated node");
             continue;
         }
-        const csNoErrors = [...res].flatMap(([c, r]) => r.some(r2 => r2 instanceof LynxError) ? [] : [c]);
+        const csNoErrors = [...res].flatMap(([c, r]) => r.every(r2 => r2 instanceof LynxError) ? [] : [c]);
         if (csNoErrors.length === 0) {
             errors.push(...[...res].flatMap(([_, r]) => r.filter(r2 => r2 instanceof LynxError)));
+            console.log("--> all concretes had errors");
             continue;
         }
         const defsSet = new Set(csNoErrors.map(c => c.def));
         const firstConcrete = csNoErrors[0]!;
         const firstDef = firstConcrete.def;
+        console.log(node, defsSet);
         if (defsSet.size > 1) {
+            console.log("--> couldn't resolve variant");
             errors.push(makePosError(`Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
                 node.sym, LynxError.BAD_CONN_SPEC));
             continue;
         }
+        console.log("--> success");
         realNodes.set(node, firstDef);
     }
     // create all of the connection objects
     for (var conn of connections) {
         const tgtLeft = realNodes.get(conn.from);
         const tgtRight = realNodes.get(conn.to);
-        if (!tgtLeft || !tgtRight) continue; // one or both is errored
-        const fc = [...conn.from.concretes].find(c => tgtLeft === c.def)!;
-        const tc = [...conn.to.concretes].find(c => tgtRight === c.def)!;
+        if (tgtLeft === undefined || tgtRight === undefined) {
+            // one or both is errored
+            continue;
+        }
+        const pair = findSuccessfulConcretePair(conn.from, tgtLeft, conn.to, tgtRight, conn, connCache);
+        if (!pair) continue;
+        const { fc, tc } = pair;
         const res = getCache(connCache, fc, tc, conn);
         if (res instanceof LynxError) {
+            console.log("wtf", fc, tc, conn.from.sym.__name__, conn.to.sym.__name__);
             continue;
         }
         if (res === undefined) {
             console.error(conn.from, conn.to);
-            throw new RangeError("unreachable nope");
+            throw new RangeError("unreachable");
         }
-        realConnections.add({
+        realConnections.push({
             from: conn.from,
             to: conn.to,
             outPort: res[0],
@@ -502,6 +523,27 @@ function putCache(cache: ConnCache, left: ConcreteNodeDef, right: ConcreteNodeDe
 
 function getCache(cache: ConnCache, left: ConcreteNodeDef, right: ConcreteNodeDef, conn: ConnectionSpec): ConnectResult | undefined {
     return cache.get(left)?.get(right)?.get(conn);
+}
+
+function findSuccessfulConcretePair(
+    fromSuper: Superposition,
+    fromDef: NodeDef,
+    toSuper: Superposition,
+    toDef: NodeDef,
+    conn: ConnectionSpec,
+    connCache: ConnCache
+): { fc: ConcreteNodeDef, tc: ConcreteNodeDef } | undefined {
+    for (const fc of fromSuper.concretes) {
+        if (fc.def !== fromDef) continue;
+        for (const tc of toSuper.concretes) {
+            if (tc.def !== toDef) continue;
+            const res = getCache(connCache, fc, tc, conn);
+            if (res && !(res instanceof LynxError)) {
+                return { fc, tc };
+            }
+        }
+    }
+    return undefined;
 }
 
 /*
@@ -770,7 +812,7 @@ function validateConnections(nodes: Map<Superposition, NodeDef>, links: Connecti
     return errors;
 }
 
-function createAndConnectNodes(nodes: Map<Superposition, NodeDef>, links: Set<Connection>): LynxNode[] {
+function createAndConnectNodes(nodes: Map<Superposition, NodeDef>, links: Connection[]): LynxNode[] {
     const sToI: Map<Superposition, LynxNode> = new Map;
     for (var [n, def] of nodes) {
         sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__!, col: n.sym.__col__! }, n.args));

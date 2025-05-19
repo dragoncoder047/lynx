@@ -71,9 +71,11 @@
     }
 
     .ace_constant.ace_numeric,
-    .ace_constant.ace_character.ace_entity,
-    .ace_identifier {
+    .ace_constant.ace_character.ace_entity {
         color: magenta;
+    }
+    .ace_identifier {
+        color: tan;
     }
 
     .ace_invalid {
@@ -117,9 +119,4 @@
     .ace_indent-guide-active {
         background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgYGBgYHB3d/8PAAOIAdULw8qMAAAAAElFTkSuQmCC) right repeat-y;
     }
-}
-
-#ace_settingsmenu {
-    background: #333;
-    color: white;
 }

@@ -23,10 +23,12 @@ defNode({
         }
     },
     tick({ node }) {
-        const dt = Date.now() - node.state.lastTickTime;
+        const now = performance.now();
+        const dt = now - node.state.lastTickTime;
         if (!node.get("paused")) {
             node.state.elapsedTime += dt;
         }
+        node.state.lastTickTime = now;
         // Max 1 update per tick because limitations
         if (node.state.elapsedTime >= node.get("interval")) {
             node.state.elapsedTime = 0;

@@ -20,6 +20,7 @@ editor.setTheme({
 });
 editor.commands.removeCommand("showSettingsMenu", false);
 editor.session.setOption("wrap", "free");
+editor.session.setOption("wrap", "off");
 const changeText: ((text: string) => void) & { isRunning: boolean } = function (text: string) {
     changeText.isRunning = true;
     try {
