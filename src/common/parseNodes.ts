@@ -234,6 +234,20 @@ function implicit1(s: Superposition): { nodes: Superposition[], links: Connectio
     const errors: LynxError[] = [];
     const nodes: Superposition[] = [];
     const links: ConnectionSpec[] = [];
+    if (s.asWritten.args.length === 1) {
+        // only one arg, so there must be one input or one param-only input
+        // infer which one it is
+        const allInputs = [...s.concretes].map(c => Object.entries(c.def.inputs));
+        const matchingInputs = allInputs.flatMap(inputs => {
+            if (inputs.length === 1) return inputs;
+            const paramOnly = inputs.filter(([_, p]) => p.is("paramOnly"));
+            if (paramOnly.length === 1) return paramOnly;
+            return [];
+        });
+        if (new Set(matchingInputs.map(([name, p]) => name)).size === 1) {
+            s.asWritten.args.unshift(new LSymbol(":" + matchingInputs[0]![0]));
+        }
+    }
     for (var i = 0; i < s.asWritten.args.length; i += 2) {
         const keyName = s.asWritten.args[i];
         const keyVal = s.asWritten.args[i + 1];

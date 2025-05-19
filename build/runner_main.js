@@ -14013,6 +14013,18 @@ function implicit1(s) {
   const errors = [];
   const nodes = [];
   const links = [];
+  if (s.asWritten.args.length === 1) {
+    const allInputs = [...s.concretes].map((c) => Object.entries(c.def.inputs));
+    const matchingInputs = allInputs.flatMap((inputs) => {
+      if (inputs.length === 1) return inputs;
+      const paramOnly = inputs.filter(([_, p]) => p.is("paramOnly"));
+      if (paramOnly.length === 1) return paramOnly;
+      return [];
+    });
+    if (new Set(matchingInputs.map(([name, p]) => name)).size === 1) {
+      s.asWritten.args.unshift(new LSymbol(":" + matchingInputs[0][0]));
+    }
+  }
   for (var i = 0; i < s.asWritten.args.length; i += 2) {
     const keyName = s.asWritten.args[i];
     const keyVal = s.asWritten.args[i + 1];
