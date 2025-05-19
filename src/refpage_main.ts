@@ -1,9 +1,10 @@
+import { marked } from "marked";
 import { get, html, make } from "vanilla";
 import { Feature } from "./common/feature";
 import { NodeDef } from "./common/nodeDef";
-import { env } from "./lipsShim";
-import { FEATURES, modulesReady, NODES } from "./nodes/all";
 import { repr } from "./common/utils";
+import { FEATURES, modulesReady, NODES } from "./nodes/all";
+import { markdownToHTML } from "./markedShim";
 
 await modulesReady;
 
@@ -56,7 +57,7 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
                 "default: ", make("code", {}, repr(port.initialVal).toString()))])));
     }
     if (def.doc) {
-        li.append(make("p", {}, html(def.doc)));
+        li.append(make("p", {}, html(markdownToHTML(def.doc))));
     }
 }
 
@@ -80,7 +81,7 @@ function docFeature(id: string, feat: Feature, el: HTMLDListElement, usedBy: Set
             make("em", {}, "Used by: ", ...Array.from(usedBy).flatMap(f => [", ",
                 make("a", { href: `#${NODE_ID_PREFIX}${encodeURIComponent(f)}` },
                     make("code", {}, f))]).slice(1))),
-        make("p", {}, html(feat.doc!)));
+        make("p", {}, html(markdownToHTML(feat.doc!))));
     el.append(dt, dl);
 }
 

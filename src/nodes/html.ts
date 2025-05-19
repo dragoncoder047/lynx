@@ -11,7 +11,7 @@ defNode({
         pressed: new Port("boolean", false),
         hovering: new Port("boolean", false),
     },
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/button\" target=\"_blank\"><code>&lt;button></code></a> with the text and outputs :pressed and :hovering states when the user interacts with it.",
+    doc: "Creates a HTML [`<button>`](https://developer.mozilla.org/docs/Web/HTML/Element/button) element with the given text and outputs `:pressed` and `:hovering` states when the user interacts with it.",
     stateKeys: ["el"],
     setup({ app, node }) {
         const button = make("button", {}, node.get("text") as any);
@@ -47,7 +47,7 @@ defNode({
         value: new Port("string", ""),
         index: new Port("number", 0),
     },
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/select\" target=\"_blank\"><code>&lt;label>&lt;select></code></a> dropdown. Takes an array of options and outputs the selected value and index.",
+    doc: "Creates a HTML [`<select>`](https://developer.mozilla.org/docs/Web/HTML/Element/select) dropdown. Takes an array of options and outputs the selected value and index.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
@@ -94,7 +94,7 @@ defNode({
     outputs: {
         value: new Port("number", 0),
     },
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/input/number\" target=\"_blank\"><code>&lt;input type=number></code></a> element. Outputs the current value.",
+    doc: "Creates a HTML [`<input type=number>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number) element. Outputs the current value.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
@@ -136,7 +136,7 @@ defNode({
     outputs: {
         value: new Port("number", 0),
     },
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/input/range\" target=\"_blank\"><code>&lt;input type=range></code></a> slider. Outputs the current value.",
+    doc: "Creates a HTML [`<input type=range>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range) slider. Outputs the current value.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
@@ -174,7 +174,7 @@ defNode({
         label: new Port("string", "Output"),
     },
     outputs: {},
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/output\" target=\"_blank\"><code>&lt;output></code></a> element to display a value.",
+    doc: "Creates a HTML [`<output>`](https://developer.mozilla.org/docs/Web/HTML/Element/output) element to display a value.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
@@ -206,7 +206,7 @@ defNode({
         label: new Port("string", "Meter"),
     },
     outputs: {},
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/meter\" target=\"_blank\"><code>&lt;meter></code></a> element to display a scalar measurement.",
+    doc: "Creates a HTML [`<meter>`](https://developer.mozilla.org/docs/Web/HTML/Element/meter) element to display a scalar measurement.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
@@ -245,7 +245,7 @@ defNode({
     outputs: {
         value: new Port("string", ""),
     },
-    doc: "Creates a HTML <a href=\"https://developer.mozilla.org/docs/Web/HTML/Element/input/text\" target=\"_blank\"><code>&lt;input type=text></code></a> element with a label. Outputs the current value.",
+    doc: "Creates a HTML [`<input type=text>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text) element with a label. Outputs the current value.",
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");

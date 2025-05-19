@@ -13122,7 +13122,7 @@ var init_flow_control = __esm({
       id: "value",
       template: { T: ["any"] },
       doc: `Emits the same value every time when it is updated
-    by the trigger input.`,
+    by the \`:trigger\` input.`,
       inputs: {
         trigger: new Port("signal", void 0),
         value: new Port("T", void 0, ["silent"])
@@ -13136,8 +13136,8 @@ var init_flow_control = __esm({
     });
     defNode({
       id: "edges",
-      doc: `Emits a signal on :rising when :value changes from
-    false to true, and a signal on :falling when :value changes
+      doc: `Emits a signal on \`:rising\` when \`:value\` changes from
+    false to true, and a signal on \`:falling\` when \`:value\` changes
     from true to false.`,
       inputs: {
         value: new Port("boolean", false)
@@ -13179,7 +13179,7 @@ var init_html = __esm({
         pressed: new Port("boolean", false),
         hovering: new Port("boolean", false)
       },
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/button" target="_blank"><code>&lt;button></code></a> with the text and outputs :pressed and :hovering states when the user interacts with it.',
+      doc: "Creates a HTML [`<button>`](https://developer.mozilla.org/docs/Web/HTML/Element/button) element with the given text and outputs `:pressed` and `:hovering` states when the user interacts with it.",
       stateKeys: ["el"],
       setup({ app: app2, node }) {
         const button = make("button", {}, node.get("text"));
@@ -13214,7 +13214,7 @@ var init_html = __esm({
         value: new Port("string", ""),
         index: new Port("number", 0)
       },
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/select" target="_blank"><code>&lt;label>&lt;select></code></a> dropdown. Takes an array of options and outputs the selected value and index.',
+      doc: "Creates a HTML [`<select>`](https://developer.mozilla.org/docs/Web/HTML/Element/select) dropdown. Takes an array of options and outputs the selected value and index.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13260,7 +13260,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/number" target="_blank"><code>&lt;input type=number></code></a> element. Outputs the current value.',
+      doc: "Creates a HTML [`<input type=number>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number) element. Outputs the current value.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13301,7 +13301,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/range" target="_blank"><code>&lt;input type=range></code></a> slider. Outputs the current value.',
+      doc: "Creates a HTML [`<input type=range>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range) slider. Outputs the current value.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13338,7 +13338,7 @@ var init_html = __esm({
         label: new Port("string", "Output")
       },
       outputs: {},
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/output" target="_blank"><code>&lt;output></code></a> element to display a value.',
+      doc: "Creates a HTML [`<output>`](https://developer.mozilla.org/docs/Web/HTML/Element/output) element to display a value.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13369,7 +13369,7 @@ var init_html = __esm({
         label: new Port("string", "Meter")
       },
       outputs: {},
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/meter" target="_blank"><code>&lt;meter></code></a> element to display a scalar measurement.',
+      doc: "Creates a HTML [`<meter>`](https://developer.mozilla.org/docs/Web/HTML/Element/meter) element to display a scalar measurement.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13407,7 +13407,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("string", "")
       },
-      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/text" target="_blank"><code>&lt;input type=text></code></a> element with a label. Outputs the current value.',
+      doc: "Creates a HTML [`<input type=text>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text) element with a label. Outputs the current value.",
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13552,7 +13552,8 @@ var init_gps = __esm({
         }, () => {
         }, { enableHighAccuracy: true });
     }, {
-      doc: "Accesses the device's gurrent GPS location and makes position updates available to the app. If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.",
+      doc: `Accesses the device's current GPS location and makes position updates available to the app.
+    If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
       watch(cbOK, cbErr) {
         navigator.geolocation.getCurrentPosition(cbOK, cbErr, { enableHighAccuracy: true });
         navigator.geolocation.watchPosition(cbOK, cbErr, { enableHighAccuracy: true });
@@ -13569,10 +13570,14 @@ var init_gps = __esm({
         speed: new Port("number", 0)
       },
       doc: `Watches your device's GPS position and outputs position and movement data.
-    <br>The point that <code>gps</code> sends for :pos is of the form <code>{x: longitude, y: latitude}</code>.
-    <br>Altitude, heading, and speed may not be available depending on your device.`,
+
+    The point that \`gps\` sends for :pos is of the form \`{x: longitude, y: latitude}\`.
+
+    Altitude, heading, and speed may not be available or may be totally incorrect depending on your device.
+    (Mine always returns 0 for altitude even though I am most certainly not at sea level.)`,
       setup({ app: app2, node, features }) {
-        features.geolocation.watch(({ coords }) => {
+        features.geolocation.watch((arg) => {
+          const coords = arg.coords;
           console.log(coords);
           node.output("pos", new Point(coords.longitude, coords.latitude));
           if (coords.altitude !== null) node.output("altitude", coords.altitude);
@@ -13622,10 +13627,9 @@ var init_unsafe = __esm({
         btn.addEventListener("click", () => r());
       });
     }, {
-      doc: `Used by nodes that have access to all of Javascript, meaning that
-    they could do just about anything, including executing malicious code.
-    This feature forces the user to confirm they want to run the flow first
-    before anything happens.`
+      doc: `Used by nodes that have access to all of Javascript, meaning that they could do just about anything, including executing malicious code.
+
+    This feature forces the user to confirm they want to run the flow first before anything happens.`
     }));
     defNode({
       id: "fn",
@@ -13638,11 +13642,10 @@ var init_unsafe = __esm({
       handlesParams: true,
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
-    The value of the inputs is available in the variable <code>$inputs</code>,
-    and the node object is available in the variable <code>$node</code>.
-    Whatever array the function returns will be passed to the output.
-    If <code>#&lt;void></code> (JS <code>undefined</code>) is returned,
-    the node will not update its outputs.`,
+
+    The value of the inputs is available in the variable \`$inputs\`, and the node object is available in the variable \`$node\`. Whatever array the function returns will be passed to the output.
+
+    If \`#<void>\` (JS \`undefined\`) is returned, the node will not update its outputs.`,
       async setup({ node, features, args }) {
         const arrayToConsList = user_env.get("vector->list");
         console.log(features["unsafe-code"]);

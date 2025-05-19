@@ -1,3 +1,8 @@
+// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts
+function get(id) {
+  return document.querySelector(id);
+}
+
 // node_modules/.pnpm/marked@15.0.11/node_modules/marked/lib/marked.esm.js
 function _getDefaults() {
   return {
@@ -360,8 +365,8 @@ var _Tokenizer = class {
   // set by the lexer
   lexer;
   // set by the lexer
-  constructor(options2) {
-    this.options = options2 || _defaults;
+  constructor(options3) {
+    this.options = options3 || _defaults;
   }
   space(src) {
     const cap = this.rules.block.newline.exec(src);
@@ -430,25 +435,25 @@ var _Tokenizer = class {
   blockquote(src) {
     const cap = this.rules.block.blockquote.exec(src);
     if (cap) {
-      let lines2 = rtrim(cap[0], "\n").split("\n");
+      let lines = rtrim(cap[0], "\n").split("\n");
       let raw = "";
       let text = "";
       const tokens = [];
-      while (lines2.length > 0) {
+      while (lines.length > 0) {
         let inBlockquote = false;
         const currentLines = [];
         let i;
-        for (i = 0; i < lines2.length; i++) {
-          if (this.rules.other.blockquoteStart.test(lines2[i])) {
-            currentLines.push(lines2[i]);
+        for (i = 0; i < lines.length; i++) {
+          if (this.rules.other.blockquoteStart.test(lines[i])) {
+            currentLines.push(lines[i]);
             inBlockquote = true;
           } else if (!inBlockquote) {
-            currentLines.push(lines2[i]);
+            currentLines.push(lines[i]);
           } else {
             break;
           }
         }
-        lines2 = lines2.slice(i);
+        lines = lines.slice(i);
         const currentRaw = currentLines.join("\n");
         const currentText = currentRaw.replace(this.rules.other.blockquoteSetextReplace, "\n    $1").replace(this.rules.other.blockquoteSetextReplace2, "");
         raw = raw ? `${raw}
@@ -459,7 +464,7 @@ ${currentText}` : currentText;
         this.lexer.state.top = true;
         this.lexer.blockTokens(currentText, tokens, true);
         this.lexer.state.top = top;
-        if (lines2.length === 0) {
+        if (lines.length === 0) {
           break;
         }
         const lastToken = tokens.at(-1);
@@ -467,7 +472,7 @@ ${currentText}` : currentText;
           break;
         } else if (lastToken?.type === "blockquote") {
           const oldToken = lastToken;
-          const newText = oldToken.raw + "\n" + lines2.join("\n");
+          const newText = oldToken.raw + "\n" + lines.join("\n");
           const newToken = this.blockquote(newText);
           tokens[tokens.length - 1] = newToken;
           raw = raw.substring(0, raw.length - oldToken.raw.length) + newToken.raw;
@@ -475,12 +480,12 @@ ${currentText}` : currentText;
           break;
         } else if (lastToken?.type === "list") {
           const oldToken = lastToken;
-          const newText = oldToken.raw + "\n" + lines2.join("\n");
+          const newText = oldToken.raw + "\n" + lines.join("\n");
           const newToken = this.list(newText);
           tokens[tokens.length - 1] = newToken;
           raw = raw.substring(0, raw.length - lastToken.raw.length) + newToken.raw;
           text = text.substring(0, text.length - oldToken.raw.length) + newToken.raw;
-          lines2 = newText.substring(tokens.at(-1).raw.length).split("\n");
+          lines = newText.substring(tokens.at(-1).raw.length).split("\n");
           continue;
         }
       }
@@ -1036,10 +1041,10 @@ var _Lexer = class __Lexer {
   state;
   tokenizer;
   inlineQueue;
-  constructor(options2) {
+  constructor(options3) {
     this.tokens = [];
     this.tokens.links = /* @__PURE__ */ Object.create(null);
-    this.options = options2 || _defaults;
+    this.options = options3 || _defaults;
     this.options.tokenizer = this.options.tokenizer || new _Tokenizer();
     this.tokenizer = this.options.tokenizer;
     this.tokenizer.options = this.options;
@@ -1080,15 +1085,15 @@ var _Lexer = class __Lexer {
   /**
    * Static Lex Method
    */
-  static lex(src, options2) {
-    const lexer2 = new __Lexer(options2);
+  static lex(src, options3) {
+    const lexer2 = new __Lexer(options3);
     return lexer2.lex(src);
   }
   /**
    * Static Lex Inline Method
    */
-  static lexInline(src, options2) {
-    const lexer2 = new __Lexer(options2);
+  static lexInline(src, options3) {
+    const lexer2 = new __Lexer(options3);
     return lexer2.inlineTokens(src);
   }
   /**
@@ -1399,8 +1404,8 @@ var _Renderer = class {
   options;
   parser;
   // set by the parser
-  constructor(options2) {
-    this.options = options2 || _defaults;
+  constructor(options3) {
+    this.options = options3 || _defaults;
   }
   space(token) {
     return "";
@@ -1593,8 +1598,8 @@ var _Parser = class __Parser {
   options;
   renderer;
   textRenderer;
-  constructor(options2) {
-    this.options = options2 || _defaults;
+  constructor(options3) {
+    this.options = options3 || _defaults;
     this.options.renderer = this.options.renderer || new _Renderer();
     this.renderer = this.options.renderer;
     this.renderer.options = this.options;
@@ -1604,15 +1609,15 @@ var _Parser = class __Parser {
   /**
    * Static Parse Method
    */
-  static parse(tokens, options2) {
-    const parser2 = new __Parser(options2);
+  static parse(tokens, options3) {
+    const parser2 = new __Parser(options3);
     return parser2.parse(tokens);
   }
   /**
    * Static Parse Inline Method
    */
-  static parseInline(tokens, options2) {
-    const parser2 = new __Parser(options2);
+  static parseInline(tokens, options3) {
+    const parser2 = new __Parser(options3);
     return parser2.parseInline(tokens);
   }
   /**
@@ -1773,8 +1778,8 @@ var _Parser = class __Parser {
 var _Hooks = class {
   options;
   block;
-  constructor(options2) {
-    this.options = options2 || _defaults;
+  constructor(options3) {
+    this.options = options3 || _defaults;
   }
   static passThroughHooks = /* @__PURE__ */ new Set([
     "preprocess",
@@ -2020,15 +2025,15 @@ var Marked = class {
     this.defaults = { ...this.defaults, ...opt };
     return this;
   }
-  lexer(src, options2) {
-    return _Lexer.lex(src, options2 ?? this.defaults);
+  lexer(src, options3) {
+    return _Lexer.lex(src, options3 ?? this.defaults);
   }
-  parser(tokens, options2) {
-    return _Parser.parse(tokens, options2 ?? this.defaults);
+  parser(tokens, options3) {
+    return _Parser.parse(tokens, options3 ?? this.defaults);
   }
   parseMarkdown(blockType) {
-    const parse = (src, options2) => {
-      const origOpt = { ...options2 };
+    const parse = (src, options3) => {
+      const origOpt = { ...options3 };
       const opt = { ...this.defaults, ...origOpt };
       const throwError = this.onError(!!opt.silent, !!opt.async);
       if (this.defaults.async === true && origOpt.async === false) {
@@ -2092,8 +2097,8 @@ var markedInstance = new Marked();
 function marked(src, opt) {
   return markedInstance.parse(src, opt);
 }
-marked.options = marked.setOptions = function(options2) {
-  markedInstance.setOptions(options2);
+marked.options = marked.setOptions = function(options3) {
+  markedInstance.setOptions(options3);
   marked.defaults = markedInstance.defaults;
   changeDefaults(marked.defaults);
   return marked;
@@ -2127,17 +2132,25 @@ var parseInline = marked.parseInline;
 var parser = _Parser.parse;
 var lexer = _Lexer.lex;
 
-// node_modules/.pnpm/vanilla@https+++codeload.github.com+dragoncoder047+vanilla+tar.gz+400e4ce789aebdcb53c7250a2d4ad6c94f1b193c/node_modules/vanilla/vanilla.ts
-function get(id) {
-  return document.querySelector(id);
+// src/markedShim.ts
+var options2 = {
+  gfm: true
+};
+function dedent(markdown) {
+  const lines = markdown.split("\n");
+  const indentsByLine = lines.map((x) => /^\s*$/.test(x) ? Infinity : /^\s*/.exec(x)?.[0].length ?? Infinity);
+  const minIndent_rest = Math.min(...indentsByLine.slice(1));
+  const minIndent_regexp = new RegExp(`^\\s{0,${minIndent_rest}}`);
+  const ret = lines.map((line) => line.replace(minIndent_regexp, "")).join("\n");
+  console.log(indentsByLine, ret);
+  return ret;
+}
+function markdownToHTML(markdown) {
+  return marked.parse(dedent(markdown), { ...options2, async: false });
 }
 
 // mdAll.ts
 var elToRender = get(".markdown");
-var unindented = elToRender.textContent;
-var lines = unindented.split("\n");
-var indentsByLine = lines.map((x) => /^\s*$/.test(x) ? Infinity : /^\s*/.exec(x)[0].length);
-var minIndent = Math.min(...indentsByLine);
-var theMarkdown = lines.map((line) => line.slice(minIndent)).join("\n");
-elToRender.innerHTML = marked.parse(theMarkdown, { async: false });
+elToRender.innerHTML = markdownToHTML(elToRender.textContent);
+elToRender.classList.remove("markdown");
 //# sourceMappingURL=mdAll.js.map

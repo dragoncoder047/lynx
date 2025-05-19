@@ -11,7 +11,8 @@ defFeature("geolocation", new Feature(async () => {
         // trigger the prompt
         navigator.geolocation.getCurrentPosition(() => { }, () => { }, { enableHighAccuracy: true });
 }, {
-    doc: "Accesses the device's gurrent GPS location and makes position updates available to the app. If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.",
+    doc: `Accesses the device's current GPS location and makes position updates available to the app.
+    If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
     watch(cbOK: PositionCallback, cbErr: PositionErrorCallback) {
         // first to start
         navigator.geolocation.getCurrentPosition(cbOK, cbErr, { enableHighAccuracy: true });
@@ -31,10 +32,14 @@ defNode({
         speed: new Port("number", 0),
     },
     doc: `Watches your device's GPS position and outputs position and movement data.
-    <br>The point that <code>gps</code> sends for :pos is of the form <code>{x: longitude, y: latitude}</code>.
-    <br>Altitude, heading, and speed may not be available depending on your device.`,
+
+    The point that \`gps\` sends for :pos is of the form \`{x: longitude, y: latitude}\`.
+
+    Altitude, heading, and speed may not be available or may be totally incorrect depending on your device.
+    (Mine always returns 0 for altitude even though I am most certainly not at sea level.)`,
     setup({ app, node, features }) {
-        features.geolocation!.watch(({ coords }) => {
+        features.geolocation!.watch((arg: GeolocationPosition) => {
+            const coords = arg.coords;
             console.log(coords);
             node.output("pos", new Point(coords.longitude, coords.latitude));
             if (coords.altitude !== null) node.output("altitude", coords.altitude);
