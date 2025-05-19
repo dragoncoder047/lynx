@@ -430,9 +430,7 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
     const realNodes: Map<Superposition, NodeDef> = new Map;
     const realConnections: Connection[] = [];
     for (var node of nodes) {
-        console.log("processing node id", node.sym.__name__);
         if (node.concretes.size < 1) {
-            console.log("--> no concretes");
             continue;
         }
         const res = superCache.get(node);
@@ -443,13 +441,11 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
                 errors.push(makePosError(`Could not resolve variant of isolated node "${node.asWritten.name}". Try connecting something to it.`,
                     node.sym, LynxError.BAD_CONN_SPEC));
             } else realNodes.set(node, [...node.concretes][0]!.def);
-            console.log("--> isolated node");
             continue;
         }
         const csNoErrors = [...res].flatMap(([c, r]) => r.every(r2 => r2 instanceof LynxError) ? [] : [c]);
         if (csNoErrors.length === 0) {
             errors.push(...[...res].flatMap(([_, r]) => r.filter(r2 => r2 instanceof LynxError)));
-            console.log("--> all concretes had errors");
             continue;
         }
         const defsSet = new Set(csNoErrors.map(c => c.def));
@@ -457,12 +453,10 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
         const firstDef = firstConcrete.def;
         console.log(node, defsSet);
         if (defsSet.size > 1) {
-            console.log("--> couldn't resolve variant");
             errors.push(makePosError(`Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
                 node.sym, LynxError.BAD_CONN_SPEC));
             continue;
         }
-        console.log("--> success");
         realNodes.set(node, firstDef);
     }
     // create all of the connection objects
@@ -478,7 +472,6 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
         const { fc, tc } = pair;
         const res = getCache(connCache, fc, tc, conn);
         if (res instanceof LynxError) {
-            console.log("wtf", fc, tc, conn.from.sym.__name__, conn.to.sym.__name__);
             continue;
         }
         if (res === undefined) {

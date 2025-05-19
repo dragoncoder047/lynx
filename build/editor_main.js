@@ -36501,7 +36501,7 @@ var LynxNode = class {
     for (var n in this.def.outputs) {
       const val = this.def.outputs[n].initialVal;
       this.outputCurrentValues[n] = val;
-      this.output(n, val);
+      this.output(n, val, void 0, true);
     }
     await this.def.setup?.({
       app,
@@ -36535,10 +36535,12 @@ var LynxNode = class {
       this.inputCurrentValues[name] ??= [];
       this.inputCurrentValues[name][bi] = value;
     }
+    console.log("receiving", value, "on", name, "is silent:", this.def.inputs[name]?.is("silent") || silent);
     if (this.def.inputs[name]?.is("silent") || silent) return;
     if (this.def.inputs[name]?.type === "signal") value = true;
     if (bi === void 0) this.#changes[name] = value;
     else this.#changes[name] = this.inputCurrentValues[name].with(bi, value);
+    console.log("updated change", name, this.#changes[name]);
   }
   async tick(app) {
     if (this.def === void 0)
@@ -36556,7 +36558,7 @@ var LynxNode = class {
     }
     this.#changes = {};
   }
-  output(outName, value, bo) {
+  output(outName, value, bo, forceSilent) {
     const isBus = Array.isArray(this.outputCurrentValues[outName]);
     if (isBus && !Array.isArray(value)) {
       if (bo === void 0)
@@ -36564,7 +36566,7 @@ var LynxNode = class {
       this.outputCurrentValues[outName][bo] = value;
     } else this.outputCurrentValues[outName] = value;
     const connections = this.connections[outName] ?? [];
-    const silent = this.def.outputs[outName].is("silent");
+    const silent = forceSilent || this.def.outputs[outName].is("silent");
     for (var conn of connections) {
       var theValue = this.outputCurrentValues[outName];
       if (isBus && conn.busNOut !== void 0) {
@@ -36572,7 +36574,7 @@ var LynxNode = class {
           theValue = theValue[conn.busNOut];
         else continue;
       }
-      console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn);
+      console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn, "is silent:", silent);
       conn.node.send(conn.port, theValue, conn.busNIn, silent);
     }
   }
@@ -36996,9 +36998,7 @@ function wfc(nodes, connections) {
   const realNodes = /* @__PURE__ */ new Map();
   const realConnections = [];
   for (var node of nodes) {
-    console.log("processing node id", node.sym.__name__);
     if (node.concretes.size < 1) {
-      console.log("--> no concretes");
       continue;
     }
     const res2 = superCache.get(node);
@@ -37010,13 +37010,11 @@ function wfc(nodes, connections) {
           LynxError.BAD_CONN_SPEC
         ));
       } else realNodes.set(node, [...node.concretes][0].def);
-      console.log("--> isolated node");
       continue;
     }
     const csNoErrors = [...res2].flatMap(([c, r]) => r.every((r2) => r2 instanceof LynxError) ? [] : [c]);
     if (csNoErrors.length === 0) {
       errors.push(...[...res2].flatMap(([_, r]) => r.filter((r2) => r2 instanceof LynxError)));
-      console.log("--> all concretes had errors");
       continue;
     }
     const defsSet = new Set(csNoErrors.map((c) => c.def));
@@ -37024,7 +37022,6 @@ function wfc(nodes, connections) {
     const firstDef = firstConcrete.def;
     console.log(node, defsSet);
     if (defsSet.size > 1) {
-      console.log("--> couldn't resolve variant");
       errors.push(makePosError(
         `Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
         node.sym,
@@ -37032,7 +37029,6 @@ function wfc(nodes, connections) {
       ));
       continue;
     }
-    console.log("--> success");
     realNodes.set(node, firstDef);
   }
   for (var conn of connections) {
@@ -37046,7 +37042,6 @@ function wfc(nodes, connections) {
     const { fc, tc } = pair;
     const res2 = getCache(connCache, fc, tc, conn);
     if (res2 instanceof LynxError) {
-      console.log("wtf", fc, tc, conn.from.sym.__name__, conn.to.sym.__name__);
       continue;
     }
     if (res2 === void 0) {

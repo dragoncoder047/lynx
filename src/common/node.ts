@@ -55,7 +55,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         for (var n in this.def!.outputs) {
             const val = this.def!.outputs[n].initialVal;
             this.outputCurrentValues[n] = val;
-            this.output(n, val);
+            this.output(n, val, undefined, true);
         }
         await this.def!.setup?.({
             app,
@@ -90,10 +90,12 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
             this.inputCurrentValues[name][bi] = value;
         }
         // decide whether to mark it as a change
+        console.log("receiving", value, "on", name, "is silent:", this.def.inputs[name]?.is("silent") || silent);
         if (this.def.inputs[name]?.is("silent") || silent) return;
         if (this.def.inputs[name]?.type === "signal") value = true;
         if (bi === undefined) this.#changes[name] = value;
         else this.#changes[name] = (this.inputCurrentValues[name] as any[]).with(bi, value);
+        console.log("updated change", name, this.#changes[name]);
     }
     async tick(app: LynxFlow) {
         if (this.def === undefined)
@@ -111,7 +113,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         }
         this.#changes = {};
     }
-    output(outName: OPN, value?: any, bo?: number) {
+    output(outName: OPN, value?: any, bo?: number, forceSilent?: boolean) {
         const isBus = Array.isArray(this.outputCurrentValues[outName]);
         if (isBus && !Array.isArray(value)) {
             if (bo === undefined)
@@ -120,7 +122,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         }
         else this.outputCurrentValues[outName] = value;
         const connections = this.connections[outName] ?? [];
-        const silent = this.def.outputs[outName].is("silent");
+        const silent = forceSilent || this.def.outputs[outName].is("silent");
         for (var conn of connections) {
             var theValue = this.outputCurrentValues[outName];
             // If conn is not for whole array only send if it is the right index input
@@ -132,7 +134,7 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
                 else continue;
             }
             // otherwise just send it as is
-            console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn);
+            console.log("sending", theValue, "from", outName, "to", conn.port, conn.busNIn, "is silent:", silent);
             conn.node.send(conn.port, theValue, conn.busNIn, silent);
         }
     }
