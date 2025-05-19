@@ -52,9 +52,9 @@ export type TypeNameToType<T> = T extends keyof TypeMap ? TypeMap[T] : T extends
 type PortFlag = "silent" | "bus" | "paramOnly" | "eventReceiver";
 export class Port<const T extends TypeSpec | Generic = any> {
     readonly type: T;
-    readonly initialVal: TypeNameToType<T>;
+    readonly initialVal: TypeNameToType<T> | TypeNameToType<T>[];
     readonly flags: PortFlag[];
-    constructor(type: T, initialVal: TypeNameToType<T>, flags: PortFlag[] = []) {
+    constructor(type: T, initialVal: TypeNameToType<T> | TypeNameToType<T>[], flags: PortFlag[] = []) {
         this.type = type;
         this.initialVal = initialVal;
         this.flags = flags;

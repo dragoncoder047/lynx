@@ -13179,7 +13179,7 @@ var init_html = __esm({
         pressed: new Port("boolean", false),
         hovering: new Port("boolean", false)
       },
-      doc: "Creates a HTML <code>&lt;button></code> with the text and outputs :pressed and :hovering states when the user interacts with it.",
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/button" target="_blank"><code>&lt;button></code></a> with the text and outputs :pressed and :hovering states when the user interacts with it.',
       stateKeys: ["el"],
       setup({ app: app2, node }) {
         const button = make("button", {}, node.get("text"));
@@ -13202,6 +13202,230 @@ var init_html = __esm({
       },
       update({ node, changes }) {
         node.state.el.textContent = changes.text;
+      }
+    });
+    defNode({
+      id: "select",
+      inputs: {
+        options: new Port("string", [], ["bus"]),
+        label: new Port("string", "Select")
+      },
+      outputs: {
+        value: new Port("string", ""),
+        index: new Port("number", 0)
+      },
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/select" target="_blank"><code>&lt;label>&lt;select></code></a> dropdown. Takes an array of options and outputs the selected value and index.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        const select = make("select");
+        labelEl.append(labelText, select);
+        app2.addUI(labelEl);
+        node.state.el = select;
+        node.state.labelText = labelText;
+        (node.get("options") || []).forEach((opt) => {
+          const option = make("option", {}, opt);
+          select.append(option);
+        });
+        select.addEventListener("change", () => {
+          node.output("value", select.value);
+          node.output("index", select.selectedIndex);
+        });
+        node.output("value", select.value);
+        node.output("index", select.selectedIndex);
+      },
+      update({ node, changes }) {
+        const select = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
+        const oldValue = select.value;
+        select.innerHTML = "";
+        (node.get("options") || []).forEach((opt) => {
+          const option = make("option", {}, opt);
+          select.append(option);
+        });
+        select.value = oldValue;
+      }
+    });
+    defNode({
+      id: "number_input",
+      inputs: {
+        value: new Port("number", 0),
+        min: new Port("number", 0),
+        max: new Port("number", 100),
+        step: new Port("number", 1),
+        label: new Port("string", "Number")
+      },
+      outputs: {
+        value: new Port("number", 0)
+      },
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/number" target="_blank"><code>&lt;input type=number></code></a> element. Outputs the current value.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        const input = make("input", { type: "number" });
+        labelEl.append(labelText, input);
+        app2.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.min = String(node.get("min"));
+        input.max = String(node.get("max"));
+        input.step = String(node.get("step"));
+        input.value = String(node.get("value"));
+        input.addEventListener("input", () => {
+          node.output("value", Number(input.value));
+        });
+        node.output("value", Number(input.value));
+      },
+      update({ node, changes }) {
+        const input = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
+        input.min = String(node.get("min"));
+        input.max = String(node.get("max"));
+        input.step = String(node.get("step"));
+        input.value = String(node.get("value"));
+      }
+    });
+    defNode({
+      id: "range_input",
+      inputs: {
+        value: new Port("number", 0),
+        min: new Port("number", 0),
+        max: new Port("number", 100),
+        step: new Port("number", 1),
+        label: new Port("string", "Range")
+      },
+      outputs: {
+        value: new Port("number", 0)
+      },
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/range" target="_blank"><code>&lt;input type=range></code></a> slider. Outputs the current value.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        labelEl.append(labelText);
+        const input = make("input", { type: "range" });
+        labelEl.append(input);
+        app2.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.min = String(node.get("min"));
+        input.max = String(node.get("max"));
+        input.step = String(node.get("step"));
+        input.value = String(node.get("value"));
+        input.addEventListener("input", () => {
+          node.output("value", Number(input.value));
+        });
+        node.output("value", Number(input.value));
+      },
+      update({ node, changes }) {
+        const input = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
+        input.min = String(node.get("min"));
+        input.max = String(node.get("max"));
+        input.step = String(node.get("step"));
+        input.value = String(node.get("value"));
+      }
+    });
+    defNode({
+      id: "output_display",
+      inputs: {
+        value: new Port("string", ""),
+        label: new Port("string", "Output")
+      },
+      outputs: {},
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/output" target="_blank"><code>&lt;output></code></a> element to display a value.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        const output = make("output");
+        labelEl.append(labelText, output);
+        app2.addUI(labelEl);
+        node.state.el = output;
+        node.state.labelText = labelText;
+        output.textContent = node.get("value");
+      },
+      update({ node, changes }) {
+        const output = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
+        output.textContent = changes.value;
+      }
+    });
+    defNode({
+      id: "meter",
+      inputs: {
+        value: new Port("number", 0),
+        min: new Port("number", 0),
+        max: new Port("number", 100),
+        low: new Port("number", 0),
+        high: new Port("number", 100),
+        optimum: new Port("number", 50),
+        label: new Port("string", "Meter")
+      },
+      outputs: {},
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/meter" target="_blank"><code>&lt;meter></code></a> element to display a scalar measurement.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        labelEl.append(labelText);
+        const meter = make("meter");
+        labelEl.append(meter);
+        app2.addUI(labelEl);
+        node.state.el = meter;
+        node.state.labelText = labelText;
+        meter.min = node.get("min");
+        meter.max = node.get("max");
+        meter.low = node.get("low");
+        meter.high = node.get("high");
+        meter.optimum = node.get("optimum");
+        meter.value = node.get("value");
+      },
+      update({ node, changes }) {
+        const meter = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
+        meter.min = node.get("min");
+        meter.max = node.get("max");
+        meter.low = node.get("low");
+        meter.high = node.get("high");
+        meter.optimum = node.get("optimum");
+        meter.value = node.get("value");
+      }
+    });
+    defNode({
+      id: "text_input",
+      inputs: {
+        label: new Port("string", "Text")
+      },
+      outputs: {
+        value: new Port("string", "")
+      },
+      doc: 'Creates a HTML <a href="https://developer.mozilla.org/docs/Web/HTML/Element/input/text" target="_blank"><code>&lt;input type=text></code></a> element with a label. Outputs the current value.',
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = document.createTextNode(node.get("label"));
+        const input = make("input", { type: "text" });
+        labelEl.append(labelText, input);
+        app2.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.addEventListener("input", () => {
+          node.output("value", input.value);
+        });
+        node.output("value", input.value);
+      },
+      update({ node, changes }) {
+        const input = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.nodeValue = changes.label;
       }
     });
   }
@@ -13514,6 +13738,170 @@ var init_logic = __esm({
       doc: "Outputs the inverse of its input.",
       update({ node, changes }) {
         node.output("output", !changes.input);
+      }
+    });
+    defNode({
+      id: "and",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if both inputs are true and false otherwise.",
+      update({ node, changes }) {
+        node.output("output", !!(changes.a && changes.b));
+      }
+    });
+    defNode({
+      id: "and",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if all inputs are true and false otherwise (arbitrary number of inputs).",
+      update({ node, changes }) {
+        node.output("output", Array.isArray(changes.inputs) ? changes.inputs.every(Boolean) : false);
+      }
+    });
+    defNode({
+      id: "or",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs false if both inputs are false and true otherwise.",
+      update({ node, changes }) {
+        node.output("output", !!(changes.a || changes.b));
+      }
+    });
+    defNode({
+      id: "or",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs false if all inputs are false and true otherwise (arbitrary number of inputs).",
+      update({ node, changes }) {
+        node.output("output", changes.inputs.some(Boolean));
+      }
+    });
+    defNode({
+      id: "xor",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if the inputs are different and false if they are the same.",
+      update({ node, changes }) {
+        node.output("output", !!changes.a === !changes.b);
+      }
+    });
+    defNode({
+      id: "xor",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if an odd number of inputs are true and false if an even number of inputs are true (arbitrary number of inputs).",
+      update({ node, changes }) {
+        const count = changes.inputs.filter(Boolean).length;
+        node.output("output", count % 2 === 1);
+      }
+    });
+    defNode({
+      id: "nand",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if at least one input is false and false if both inputs are true.",
+      update({ node, changes }) {
+        node.output("output", !(changes.a && changes.b));
+      }
+    });
+    defNode({
+      id: "nand",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if at least one input is false and false if all inputs are true (arbitrary number of inputs).",
+      update({ node, changes }) {
+        node.output("output", !changes.inputs.every(Boolean));
+      }
+    });
+    defNode({
+      id: "nor",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if both inputs are false and false otherwise.",
+      update({ node, changes }) {
+        node.output("output", !(changes.a || changes.b));
+      }
+    });
+    defNode({
+      id: "nor",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if all inputs are false and false if any are true (arbitrary number of inputs).",
+      update({ node, changes }) {
+        node.output("output", !changes.inputs.some(Boolean));
+      }
+    });
+    defNode({
+      id: "xnor",
+      inputs: {
+        a: new Port("boolean", false),
+        b: new Port("boolean", false)
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if both inputs are the same.",
+      update({ node, changes }) {
+        node.output("output", !!changes.a === !!changes.b);
+      }
+    });
+    defNode({
+      id: "xnor",
+      inputs: {
+        inputs: new Port("boolean", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("boolean", true)
+      },
+      doc: "Outputs true if an even number of inputs are true and false if an odd number of inputs are true (arbitrary number of inputs).",
+      update({ node, changes }) {
+        const count = changes.inputs.filter(Boolean).length;
+        node.output("output", count % 2 === 0);
       }
     });
   }
