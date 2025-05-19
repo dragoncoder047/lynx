@@ -75,12 +75,12 @@ class PortRef {
 
 
 export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
-    const chains1: Chain[] = [];
+    const chains: Chain[] = [];
     const namedNodes: Record<string, NodeAsWritten> = {};
-    const allErrors: LynxError[] = [];
+    const errors: LynxError[] = [];
     for (var form of forms) {
         if (!(form instanceof Pair)) {
-            allErrors.push(makePosError(`Unknown ${env.get<(x: any) => string>("type")(form)} ${repr(form)} at top level`,
+            errors.push(makePosError(`Unknown ${env.get<(x: any) => string>("type")(form)} ${repr(form)} at top level`,
                 form, LynxError.BAD_SYNTAX));
             continue;
         }
@@ -89,7 +89,7 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
         switch (name) {
             case "define":
                 if (rest === nil || rest.length() < 2) {
-                    allErrors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
+                    errors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
                     continue;
                 }
                 if (rest.car instanceof Pair)
@@ -98,32 +98,32 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
                     namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
                 break;
             case LINK_COMMAND_NAME:
-                const { chains, errors } = processSpecialsAndPortrefs(consToArray(rest))
-                chains1.push(...chains);
-                allErrors.push(...errors);
+                const specialRes = processSpecialsAndPortrefs(consToArray(rest));
+                chains.push(...specialRes.chains);
+                errors.push(...specialRes.errors);
                 break;
             default:
-                allErrors.push(makePosError(`Unknown top-level invocation "${name}"`,
+                errors.push(makePosError(`Unknown top-level invocation "${name}"`,
                     first, LynxError.BAD_SYNTAX));
         }
     }
-    for (var i = 0; i < chains1.length; i++) {
-        allErrors.push(...processNamed(chains1[i]!, namedNodes));
+    for (var i = 0; i < chains.length; i++) {
+        errors.push(...processNamed(chains[i]!, namedNodes));
     }
-    const { superpos, connections, errors } = getSuperpositions(chains1, app.nodeDefs);
-    const virtual = getParamImplicitNodes(superpos);
-    superpos.push(...virtual.nodes);
-    connections.push(...virtual.links);
-    allErrors.push(...errors, ...virtual.errors);
-    const sSet = new Set(superpos);
-    const cSet = new Set(connections);
-    const more = wfc(sSet, cSet);
-    console.log(more);
-    throw "stop";
-    if (allErrors.length > 0) {
-        console.warn(allErrors);
-        throw new LynxMultiError(allErrors);
+    const superRes = getSuperpositions(chains, app.nodeDefs);
+    const virtual = getParamImplicitNodes(superRes.superpos);
+    superRes.superpos.push(...virtual.nodes);
+    superRes.connections.push(...virtual.links);
+    errors.push(...superRes.errors, ...virtual.errors);
+    const sSet = new Set(superRes.superpos);
+    const cSet = new Set(superRes.connections);
+    const final = wfc(sSet, cSet);
+    errors.push(...final.errors);
+    errors.push(...validateConnections(final.realNodes, [...final.connections]));
+    if (errors.length > 0) {
+        throw new LynxMultiError(errors);
     }
+    return createAndConnectNodes(final.realNodes, final.connections);
 }
 
 function makeHON(app: LynxFlow, def: any) {
@@ -424,9 +424,9 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
             } else realNodes.set(node, [...node.concretes][0]!.def);
             continue;
         }
-        const csNoErrors = [...res].flatMap(([c, r]) => r instanceof LynxError ? [] : [c]);
+        const csNoErrors = [...res].flatMap(([c, r]) => r.some(r2 => r2 instanceof LynxError) ? [] : [c]);
         if (csNoErrors.length === 0) {
-            errors.push(...[...res].map(([_, r]) => r as any as LynxError));
+            errors.push(...[...res].flatMap(([_, r]) => r.filter(r2 => r2 instanceof LynxError)));
             continue;
         }
         const defsSet = new Set(csNoErrors.map(c => c.def));
@@ -443,13 +443,15 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
     for (var conn of connections) {
         const tgtLeft = realNodes.get(conn.from);
         const tgtRight = realNodes.get(conn.to);
+        if (!tgtLeft || !tgtRight) continue; // one or both is errored
         const fc = [...conn.from.concretes].find(c => tgtLeft === c.def)!;
         const tc = [...conn.to.concretes].find(c => tgtRight === c.def)!;
-        const res = getCache(connCache, fc, tc, conn) as [PortRef, PortRef];
+        const res = getCache(connCache, fc, tc, conn);
         if (res instanceof LynxError) {
             continue;
         }
         if (res === undefined) {
+            console.error(conn.from, conn.to);
             throw new RangeError("unreachable nope");
         }
         realConnections.add({
@@ -459,10 +461,6 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
             inPort: res[1]
         });
     }
-    if (errors.length > 0) {
-        console.warn(errors);
-    }
-    // throw "blooey";
     return {
         errors,
         realNodes,
@@ -719,8 +717,60 @@ to check for multiple-output-into-one-input conflicts
 3. if it is a bus, either one bus output without indices can be inputting,
    or multiple non-bus ports that all have different indices
 */
-function validateConnections(nodes: ConcreteNodeDef[], links: Connection[]): LynxError[] {
+function validateConnections(nodes: Map<Superposition, NodeDef>, links: Connection[]): LynxError[] {
+    const errors: LynxError[] = [];
+    for (var [s, def] of nodes) {
+        const toThisNode = links.filter(c => c.to === s);
+        for (var i in def.inputs) {
+            const thisPort = def.inputs[i]!;
+            const toThisPort = toThisNode.filter(c => c.inPort.name === i);
+            if (thisPort.is("bus")) {
+                const wholeBusConnections = toThisPort.filter(c => c.inPort.busNum === undefined);
+                if (wholeBusConnections.length > 0) {
+                    // Only one whole-bus connection allowed
+                    if (wholeBusConnections.length > 1 || toThisPort.length > 1) {
+                        for (const c of toThisPort) {
+                            errors.push(makePosError(`Multiple outputs are connected to input :${i} of node "${def.id}" (whole-bus connection)`,
+                                c.outPort.sym, LynxError.INPUT_CONFLICT));
+                        }
+                    }
+                } else {
+                    // Each must have a different busNum
+                    const seenBI: Set<number> = new Set;
+                    for (const c of toThisPort) {
+                        const busNumStr = c.inPort.busNum!.valueOf();
+                        if (seenBI.has(busNumStr)) {
+                            errors.push(makePosError(`Multiple outputs are connected to the same bus index (${busNumStr}) of input :${i} of node "${def.id}"`,
+                                c.outPort.sym, LynxError.INPUT_CONFLICT));
+                        } else {
+                            seenBI.add(busNumStr);
+                        }
+                    }
+                }
+            } else {
+                if (toThisPort.length > 1) {
+                    for (var c of toThisPort) {
+                        errors.push(makePosError(`Multiple outputs are connected to input :${i} of node "${def.id}"`,
+                            c.outPort.sym, LynxError.INPUT_CONFLICT));
+                    }
+                }
+            }
+        }
+    }
+    return errors;
 }
 
-function createAndConnectNodes(nodes: ConcreteNodeDef[], links: Connection[]): LynxNode[] {
+function createAndConnectNodes(nodes: Map<Superposition, NodeDef>, links: Set<Connection>): LynxNode[] {
+    const sToI: Map<Superposition, LynxNode> = new Map;
+    for (var [n, def] of nodes) {
+        sToI.set(n, new LynxNode(def.id, def, { line: n.sym.__line__!, col: n.sym.__col__! }));
+    }
+    // connect them
+    for (var link of links) {
+        const { from, to, inPort, outPort } = link;
+        const fromNode = sToI.get(from)!;
+        const toNode = sToI.get(to)!;
+        fromNode.connect(outPort.name, toNode, inPort.name, outPort.busNum?.valueOf(), inPort.busNum?.valueOf());
+    }
+    return [...sToI.values()];
 }

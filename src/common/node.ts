@@ -28,7 +28,7 @@ interface Link {
 
 export class LynxNode<IPN extends string = any, OPN extends string = any, G extends Generic = any, SK extends string = any> {
     readonly name: string;
-    def: NodeDef<IPN, OPN, G, SK>;
+    readonly def: NodeDef<IPN, OPN, G, SK>;
     readonly where: { line: number; col: number; };
     #changes: Partial<Record<IPN, any>>;
     readonly connections: Partial<Record<OPN, Link[]>>;
