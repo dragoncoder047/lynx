@@ -4,7 +4,7 @@ import { LynxError, LynxMultiError, makePosError } from "./errors";
 import { LynxFlow } from "./flow";
 import { LynxNode } from "./node";
 import { NodeDef, Port } from "./nodeDef";
-import { canConnect, Generic, getGroundTypes, TypeMap, typeOf, TypeSpec } from "./types";
+import { canConnect, fixTypeOf, Generic, getGroundTypes, TypeMap, TypeSpec } from "./types";
 import { consToArray, repr } from "./utils.js";
 
 
@@ -262,12 +262,13 @@ function implicit1(s: Superposition): { nodes: Superposition[], links: Connectio
             // will only occur at the end
             break;
         }
-        const implicitNode = createImplicitSuperposition(s.asWritten, keyName, keyVal, typeOf(keyVal));
+        const { fixedVal, realType } = fixTypeOf(keyVal);
+        const implicitNode = createImplicitSuperposition(s.asWritten, keyName, fixedVal, realType);
         nodes.push(implicitNode);
         links.push({
             from: implicitNode,
             to: s,
-            portRefs: [new PortRef("value", keyVal), new PortRef(keyName)],
+            portRefs: [new PortRef("value", fixedVal), new PortRef(keyName)],
             isImplicitConnection: true
         });
     }

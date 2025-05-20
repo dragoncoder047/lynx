@@ -28,6 +28,18 @@ export function typeOf(obj: any): SingleType | "unknown" {
     return "unknown";
 }
 
+export function fixTypeOf(obj: any): { fixedVal: any, realType: SingleType } {
+    const color_regex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
+    if (typeof obj === "string") {
+        const res = color_regex.exec(obj);
+        if (res) {
+            const [, r, g, b] = res;
+            return { fixedVal: new Color(parseInt(r!, 16), parseInt(g!, 16), parseInt(b!, 16)), realType: "color" };
+        }
+    }
+    return { fixedVal: obj, realType: typeOf(obj) };
+}
+
 export function getGroundTypes(type: TypeSpec): TypeSpec[] {
     if (type === "any") return ["number", "bigint", "string", "symbol", "boolean", "color", "point"];
     if (type === "number") return ["number", "bigint", "boolean"]
