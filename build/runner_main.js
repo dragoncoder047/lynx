@@ -13186,12 +13186,20 @@ var init_flow_control = __esm({
 
 // src/nodes/html.ts
 var html_exports = {};
+function hexToRgb(hex) {
+  const num = parseInt(hex.slice(1), 16);
+  const r = num >> 16 & 255;
+  const g = num >> 8 & 255;
+  const b = num & 255;
+  return [r, g, b];
+}
 var init_html = __esm({
   "src/nodes/html.ts"() {
     "use strict";
     init_vanilla();
     init_nodeDef();
     init_all();
+    init_otherTypes();
     defNode({
       category: "User Interface",
       id: "button",
@@ -13456,6 +13464,35 @@ var init_html = __esm({
         labelText.textContent = node.get("label");
       }
     });
+    defNode({
+      category: "User Interface",
+      id: "color-input",
+      inputs: {
+        label: new Port("string", "Color")
+      },
+      outputs: {
+        value: new Port("color", new Color(0, 0, 0))
+      },
+      doc: "Creates a HTML [`<input type=color>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color) element with a label. Outputs the current color value.",
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = make("span", {}, node.get("label"));
+        const input = make("input", { type: "color" });
+        labelEl.append(labelText, input);
+        app2.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.addEventListener("input", () => {
+          node.output("value", new Color(...hexToRgb(input.value)));
+        });
+        node.output("value", new Color(...hexToRgb(input.value)));
+      },
+      update({ node }) {
+        const labelText = node.state.labelText;
+        labelText.textContent = node.get("label");
+      }
+    });
   }
 });
 
@@ -13685,6 +13722,166 @@ var init_unsafe = __esm({
   }
 });
 
+// src/nodes/features/gamepad.ts
+var gamepad_exports = {};
+var MAPPING;
+var init_gamepad = __esm({
+  "src/nodes/features/gamepad.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_otherTypes();
+    init_all();
+    defNode({
+      id: "gamepad",
+      category: "Device",
+      inputs: {
+        index: new Port("number", 0),
+        "rumble-left": new Port("number", 0),
+        "rumble-right": new Port("number", 0),
+        "rumble-lt": new Port("number", 0),
+        "rumble-rt": new Port("number", 0)
+      },
+      outputs: {
+        buttons: new Port("number", [], ["bus"]),
+        axes: new Port("number", [], ["bus"]),
+        connected: new Port("boolean", false),
+        north: new Port("number", 0),
+        south: new Port("number", 0),
+        east: new Port("number", 0),
+        west: new Port("number", 0),
+        "dpad-up": new Port("number", 0),
+        "dpad-down": new Port("number", 0),
+        "dpad-left": new Port("number", 0),
+        "dpad-right": new Port("number", 0),
+        start: new Port("number", 0),
+        select: new Port("number", 0),
+        home: new Port("number", 0),
+        "left-stick-press": new Port("number", 0),
+        "right-stick-press": new Port("number", 0),
+        "left-shoulder": new Port("number", 0),
+        "right-shoulder": new Port("number", 0),
+        "left-trigger": new Port("number", 0),
+        "right-trigger": new Port("number", 0),
+        "left-stick": new Port("point", new Point(0, 0)),
+        "right-stick": new Port("point", new Point(0, 0))
+      },
+      doc: `Utilizes the [web gamepad API](https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API)
+    to access gamepad data. The gamepad index is the index of the gamepad in the list of connected gamepads.
+    The rumble inputs are used to control the rumble of the gamepad.
+    The buttons and axes outputs are arrays of button and axis values which can be used to access buttons and axes
+    when the gamepad is a non-standard layout.`,
+      async tick({ node, dt }) {
+        const gamepad = navigator.getGamepads()[node.get("index")];
+        node.output("connected", !!gamepad);
+        if (!gamepad) return;
+        node.output("axes", gamepad.axes);
+        node.output("buttons", gamepad.buttons.map((b) => b.value));
+        for (const [name, index] of Object.entries(MAPPING.buttons)) {
+          const value = gamepad.buttons[index]?.value;
+          if (value === void 0) continue;
+          node.output(name, value);
+        }
+        for (const [name, index] of Object.entries(MAPPING.sticks)) {
+          const x = gamepad.axes[index.x];
+          const y = gamepad.axes[index.y];
+          if (x === void 0 || y === void 0) continue;
+          node.output(name, new Point(x, y));
+        }
+        const rumbleMotors = (
+          // @ts-ignore
+          // this is too new for typescript lol
+          gamepad.hapticActuators ?? []
+        );
+        if (gamepad.vibrationActuator) rumbleMotors.push(gamepad.vibrationActuator);
+        await Promise.all([
+          ...rumbleMotors.map((motor) => {
+            try {
+              motor.playEffect("dual-rumble", {
+                strongMagnitude: node.get("rumble-left"),
+                weakMagnitude: node.get("rumble-right"),
+                duration: dt
+              });
+            } catch (e75) {
+            }
+          }),
+          ...rumbleMotors.map((motor) => {
+            try {
+              motor.playEffect("trigger-rumble", {
+                leftTrigger: node.get("rumble-lt"),
+                rightTrigger: node.get("rumble-rt"),
+                duration: dt
+              });
+            } catch (e75) {
+            }
+          })
+        ]);
+      }
+    });
+    MAPPING = {
+      "buttons": {
+        south: 0,
+        east: 1,
+        west: 2,
+        north: 3,
+        "left-shoulder": 4,
+        "right-shoulder": 5,
+        "left-trigger": 6,
+        "right-trigger": 7,
+        select: 8,
+        start: 9,
+        "left-stick": 10,
+        "right-stick": 11,
+        "dpad-up": 12,
+        "dpad-down": 13,
+        "dpad-left": 14,
+        "dpad-right": 15,
+        home: 16
+      },
+      "sticks": {
+        "left-stick": { "x": 0, "y": 1 },
+        "right-stick": { "x": 2, "y": 3 }
+      }
+    };
+  }
+});
+
+// src/nodes/features/battery.ts
+var battery_exports = {};
+var init_battery = __esm({
+  "src/nodes/features/battery.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "battery",
+      category: "Device",
+      inputs: {},
+      outputs: {
+        level: new Port("number", 0),
+        charging: new Port("boolean", false)
+      },
+      doc: `Utilizes the [Battery Status API](https://developer.mozilla.org/en-US/docs/Web/API/Battery_Status_API)
+    to access battery data. The level output is a number between 0 and 1 representing the battery level.
+    The charging output is a boolean indicating if the battery is charging.`,
+      async setup({ node, app: app2 }) {
+        if (!("getBattery" in navigator)) {
+          app2.error("Battery API not supported");
+          return;
+        }
+        const battery = await navigator.getBattery();
+        battery.addEventListener("levelchange", () => {
+          node.output("level", battery.level);
+        });
+        battery.addEventListener("chargingchange", () => {
+          node.output("charging", battery.charging);
+        });
+        node.output("level", battery.level);
+        node.output("charging", battery.charging);
+      }
+    });
+  }
+});
+
 // src/nodes/math/arithmetic.ts
 var arithmetic_exports = {};
 var init_arithmetic = __esm({
@@ -13878,6 +14075,214 @@ var init_calculus = __esm({
         const f = node.get("f");
         node.output("df", (f - node.state.old_df) / dt);
         node.state.old_df = f;
+      }
+    });
+  }
+});
+
+// src/nodes/math/trig.ts
+var trig_exports = {};
+var init_trig = __esm({
+  "src/nodes/math/trig.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "cos",
+      inputs: {
+        angle: new Port("number", 0)
+      },
+      outputs: {
+        value: new Port("number", 0)
+      },
+      update({ node }) {
+        const angle = node.get("angle");
+        node.output("value", Math.cos(angle));
+      },
+      doc: `Outputs the cosine of the input angle measured in radians.`
+    });
+    defNode({
+      id: "sin",
+      inputs: {
+        angle: new Port("number", 0)
+      },
+      outputs: {
+        value: new Port("number", 0)
+      },
+      update({ node }) {
+        const angle = node.get("angle");
+        node.output("value", Math.sin(angle));
+      },
+      doc: `Outputs the sine of the input angle measured in radians.`
+    });
+    defNode({
+      id: "tan",
+      inputs: {
+        angle: new Port("number", 0)
+      },
+      outputs: {
+        value: new Port("number", 0)
+      },
+      update({ node }) {
+        const angle = node.get("angle");
+        node.output("value", Math.tan(angle));
+      },
+      doc: `Outputs the tangent of the input angle measured in radians.`
+    });
+    defNode({
+      id: "acos",
+      inputs: {
+        value: new Port("number", 0)
+      },
+      outputs: {
+        angle: new Port("number", 0)
+      },
+      update({ node }) {
+        const value = node.get("value");
+        node.output("angle", Math.acos(value));
+      },
+      doc: `Outputs the inverse cosine of the input value as an angle in radians or NaN if the value is outside the range [-1, 1].`
+    });
+    defNode({
+      id: "asin",
+      inputs: {
+        value: new Port("number", 0)
+      },
+      outputs: {
+        angle: new Port("number", 0)
+      },
+      update({ node }) {
+        const value = node.get("value");
+        node.output("angle", Math.asin(value));
+      },
+      doc: `Outputs the inverse sine of the input value as an angle in radians or NaN if the value is outside the range [-1, 1].`
+    });
+    defNode({
+      id: "atan",
+      inputs: {
+        value: new Port("number", 0)
+      },
+      outputs: {
+        angle: new Port("number", 0)
+      },
+      update({ node }) {
+        const value = node.get("value");
+        node.output("angle", Math.atan(value));
+      },
+      doc: `Outputs the inverse tangent of the input value as an angle in radians.`
+    });
+    defNode({
+      id: "radians->degrees",
+      inputs: {
+        radians: new Port("number", 0)
+      },
+      outputs: {
+        degrees: new Port("number", 0)
+      },
+      update({ node }) {
+        const radians = node.get("radians");
+        node.output("degrees", radians * (180 / Math.PI));
+      },
+      doc: `Converts radians to degrees.`
+    });
+    defNode({
+      id: "degrees->radians",
+      inputs: {
+        degrees: new Port("number", 0)
+      },
+      outputs: {
+        radians: new Port("number", 0)
+      },
+      update({ node }) {
+        const degrees = node.get("degrees");
+        node.output("radians", degrees * (Math.PI / 180));
+      },
+      doc: `Converts degrees to radians.`
+    });
+  }
+});
+
+// src/nodes/math/geometry.ts
+var geometry_exports = {};
+var init_geometry = __esm({
+  "src/nodes/math/geometry.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_otherTypes();
+    init_all();
+    defNode({
+      id: "distance",
+      category: "Geometry",
+      inputs: {
+        a: new Port("point", new Point(0, 0)),
+        b: new Port("point", new Point(0, 0))
+      },
+      outputs: {
+        distance: new Port("number", 0)
+      },
+      doc: `Calculates the distance between two points.`,
+      update({ node }) {
+        const a = node.get("a");
+        const b = node.get("b");
+        const distance = Math.hypot(b.x - a.x, b.y - a.y);
+        node.output("distance", distance);
+      }
+    });
+    defNode({
+      id: "centroid",
+      category: "Geometry",
+      inputs: {
+        points: new Port("point", [], ["bus"])
+      },
+      outputs: {
+        centroid: new Port("point", new Point(0, 0))
+      },
+      doc: `Calculates the centroid of a set of points. If there are only two points, it returns the midpoint.`,
+      update({ node }) {
+        const points = node.get("points");
+        if (points.length === 0) {
+          node.output("centroid", new Point(0, 0));
+          return;
+        }
+        const sum = points.reduce((acc, point) => {
+          acc.x += point.x;
+          acc.y += point.y;
+          return acc;
+        }, new Point(0, 0));
+        const centroid = new Point(sum.x / points.length, sum.y / points.length);
+        node.output("centroid", centroid);
+      }
+    });
+    defNode({
+      id: "xy->point",
+      category: "Geometry",
+      inputs: {
+        x: new Port("number", 0),
+        y: new Port("number", 0)
+      },
+      outputs: {
+        point: new Port("point", new Point(0, 0))
+      },
+      doc: `Converts x and y coordinates to a point.`,
+      update({ node }) {
+        node.output("point", new Point(node.get("x"), node.get("y")));
+      }
+    });
+    defNode({
+      id: "point->xy",
+      category: "Geometry",
+      inputs: {
+        point: new Port("point", new Point(0, 0))
+      },
+      outputs: {
+        x: new Port("number", 0),
+        y: new Port("number", 0)
+      },
+      doc: `Converts a point to x and y coordinates.`,
+      update({ node }) {
+        const point = node.get("point");
+        node.output("x", point.x);
+        node.output("y", point.y);
       }
     });
   }
@@ -14271,10 +14676,14 @@ var init_all = __esm({
       Promise.resolve().then(() => (init_converters(), converters_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
+      Promise.resolve().then(() => (init_gamepad(), gamepad_exports)),
+      Promise.resolve().then(() => (init_battery(), battery_exports)),
       Promise.resolve().then(() => (init_arithmetic(), arithmetic_exports)),
       Promise.resolve().then(() => (init_statistics(), statistics_exports)),
       Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_calculus(), calculus_exports)),
+      Promise.resolve().then(() => (init_trig(), trig_exports)),
+      Promise.resolve().then(() => (init_geometry(), geometry_exports)),
       Promise.resolve().then(() => (init_clock(), clock_exports)),
       Promise.resolve().then(() => (init_logic(), logic_exports)),
       Promise.resolve().then(() => (init_latches(), latches_exports)),

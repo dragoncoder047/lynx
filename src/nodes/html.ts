@@ -1,6 +1,7 @@
 import { make } from "vanilla";
 import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
+import { Color } from "../common/otherTypes";
 
 defNode({
     category: "User Interface",
@@ -272,3 +273,41 @@ defNode({
         labelText.textContent = node.get("label");
     }
 });
+
+defNode({
+    category: "User Interface",
+    id: "color-input",
+    inputs: {
+        label: new Port("string", "Color"),
+    },
+    outputs: {
+        value: new Port("color", new Color(0, 0, 0)),
+    },
+    doc: "Creates a HTML [`<input type=color>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color) element with a label. Outputs the current color value.",
+    stateKeys: ["el", "labelText"],
+    setup({ app, node }) {
+        const labelEl = make("label");
+        const labelText = make("span", {}, node.get("label"));
+        const input = make("input", { type: "color" });
+        labelEl.append(labelText, input);
+        app.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.addEventListener("input", () => {
+            node.output("value", new Color(...hexToRgb(input.value)));
+        });
+        node.output("value", new Color(...hexToRgb(input.value)));
+    },
+    update({ node }) {
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
+    }
+});
+
+function hexToRgb(hex: string): [number, number, number] {
+    const num = parseInt(hex.slice(1), 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return [r, g, b];
+}

@@ -15,6 +15,37 @@ const FEATURE_ID_PREFIX = "feat-";
 const NODE_ID_PREFIX = "node-";
 const CATEGORY_ID_PREFIX = "category-";
 
+const MAX_NUM_ENTRIES = 6;
+
+function renderPortsTable(ports: Record<string, any>, label: string) {
+    const entries = Object.entries(ports);
+    if (entries.length === 0) return null;
+    const numRows = Math.ceil(entries.length / MAX_NUM_ENTRIES);
+    const table = make("table");
+    for (var row = 0; row < numRows; row++) {
+        const start = row * MAX_NUM_ENTRIES;
+        const chunk = entries.slice(start, start + MAX_NUM_ENTRIES);
+        const tr = make("tr");
+        if (row === 0) {
+            tr.append(make("th", { rowspan: String(numRows) }, label));
+        }
+        for (const [name, port] of chunk) {
+            const b = port.is("bus") ? ", bussed" : "";
+            tr.append(
+                make("td", {},
+                    make("div", {},
+                        make("code", {}, `:${name}`),
+                        " (", port.type as string, b, ")"),
+                    ...(port.type === "signal" ? [] : [make("div", {},
+                        "default: ", make("code", {}, repr(port.initialVal).toString()))])
+                )
+            );
+        }
+        table.append(tr);
+    }
+    return table;
+}
+
 function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Set<string>>) {
     const li = make("li");
     list.append(li);
@@ -34,29 +65,10 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
             fStore[f]!.add(def.id);
         }
     }
-    const ioTab = make("table");
-    li.append(ioTab);
-    const iRow = make("tr", {}, make("th", {}, "Inputs"));
-    const oRow = make("tr", {}, make("th", {}, "Outputs"));
-    ioTab.append(iRow, oRow);
-    for (let [input, port] of Object.entries(def.inputs)) {
-        const b = port.is("bus") ? ", bussed" : "";
-        iRow.append(make("td", {},
-            make("div", {},
-                make("code", {}, ":", input),
-                " (", port.type as string, b, ")"),
-            ...(port.type === "signal" ? [] : [make("div", {},
-                "default: ", make("code", {}, repr(port.initialVal).toString()))])));
-    }
-    for (let [output, port] of Object.entries(def.outputs)) {
-        const b = port.is("bus") ? ", bussed" : "";
-        oRow.append(make("td", {},
-            make("div", {},
-                make("code", {}, ":", output),
-                " (", port.type as string, b, ")"),
-            ...(port.type === "signal" ? [] : [make("div", {},
-                "default: ", make("code", {}, repr(port.initialVal).toString()))])));
-    }
+    const inTable = renderPortsTable(def.inputs, "Inputs");
+    if (inTable) li.append(inTable);
+    const outTable = renderPortsTable(def.outputs, "Outputs");
+    if (outTable) li.append(outTable);
     if (def.doc) {
         li.append(make("p", {}, html(markdownToHTML(def.doc))));
     }

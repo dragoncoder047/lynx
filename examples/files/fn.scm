@@ -11,5 +11,5 @@
        (edges) :rising ::0
        (fn
           (let* ((mul 100)
-                 (num (1+ (floor (* (Math.random) mul)))))
+                 (num (1+ (floor (* (random) mul)))))
                ($app.log (format "Your random d~a value is: ~a" mul num)))))
