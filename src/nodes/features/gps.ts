@@ -1,28 +1,11 @@
-import { Feature } from "../../common/feature";
 import { Port } from "../../common/nodeDef";
-import { defFeature, defNode } from "../all";
 import { Point } from "../../common/otherTypes";
-
-defFeature("geolocation", new Feature(async () => {
-    const result = await navigator.permissions.query({ name: "geolocation" });
-    if (result.name === "denied")
-        throw new RangeError("This app needs to know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
-    if (result.name == "prompt")
-        // trigger the prompt
-        navigator.geolocation.getCurrentPosition(() => { }, () => { }, { enableHighAccuracy: true });
-}, {
-    doc: `Accesses the device's current GPS location and makes position updates available to the app.
-    If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
-    watch(cbOK: PositionCallback, cbErr: PositionErrorCallback) {
-        navigator.geolocation.watchPosition(cbOK, cbErr, { enableHighAccuracy: true });
-    }
-}));
+import { defNode } from "../all";
 
 defNode({
     id: "gps",
     category: "Device",
     inputs: {},
-    features: ["geolocation"],
     outputs: {
         pos: new Port("point", Point.EMPTY),
         altitude: new Port("number", 0),
@@ -35,15 +18,15 @@ defNode({
 
     Altitude, heading, and speed may not be available or may be totally incorrect depending on your device.
     (Mine always returns 0 for altitude even though I am most certainly not at sea level.)`,
-    setup({ app, node, features }) {
-        features.geolocation!.watch((arg: GeolocationPosition) => {
+    setup({ app, node }) {
+        navigator.geolocation.watchPosition(arg => {
             const coords = arg.coords;
             console.log(coords);
             node.output("pos", new Point(coords.longitude, coords.latitude));
             if (coords.altitude !== null) node.output("altitude", coords.altitude);
             if (coords.heading !== null) node.output("heading", coords.heading);
             if (coords.speed !== null) node.output("speed", coords.speed);
-        }, (err: GeolocationPositionError) => {
+        }, err => {
             console.error(err);
             switch (err.code) {
                 case GeolocationPositionError.PERMISSION_DENIED:

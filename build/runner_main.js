@@ -13193,6 +13193,12 @@ function hexToRgb(hex) {
   const b = num & 255;
   return [r, g, b];
 }
+function rgbToHex(color) {
+  const r = color.r.toString(16).padStart(2, "0");
+  const g = color.g.toString(16).padStart(2, "0");
+  const b = color.b.toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+}
 var init_html = __esm({
   "src/nodes/html.ts"() {
     "use strict";
@@ -13210,7 +13216,9 @@ var init_html = __esm({
         pressed: new Port("boolean", false),
         hovering: new Port("boolean", false)
       },
-      doc: "Creates a HTML [`<button>`](https://developer.mozilla.org/docs/Web/HTML/Element/button) element with the given text and outputs `:pressed` and `:hovering` states when the user interacts with it.",
+      doc: `Creates a HTML [\`<button>\`](https://developer.mozilla.org/docs/Web/HTML/Element/button)
+    element with the given text and outputs \`:pressed\` and \`:hovering\` states when the user
+    interacts with it.`,
       stateKeys: ["el"],
       setup({ app: app2, node }) {
         const button = make("button", {}, node.get("text"));
@@ -13240,13 +13248,15 @@ var init_html = __esm({
       id: "select",
       inputs: {
         options: new Port("string", [], ["bus"]),
-        label: new Port("string", "Select")
+        label: new Port("string", "Select"),
+        value: new Port("string", "")
       },
       outputs: {
         selected: new Port("string", ""),
         index: new Port("number", 0)
       },
-      doc: "Creates a HTML [`<select>`](https://developer.mozilla.org/docs/Web/HTML/Element/select) dropdown. Takes an array of options and outputs the selected value and index.",
+      doc: `Creates a HTML [\`<select>\`](https://developer.mozilla.org/docs/Web/HTML/Element/select)
+    dropdown. Takes an array of options and outputs the selected value and index.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13260,6 +13270,9 @@ var init_html = __esm({
           const option = make("option", {}, opt);
           select.append(option);
         });
+        if (node.get("value")) {
+          select.value = node.get("value");
+        }
         select.addEventListener("change", () => {
           node.output("selected", select.value);
           node.output("index", select.selectedIndex);
@@ -13267,7 +13280,7 @@ var init_html = __esm({
         node.output("selected", select.value);
         node.output("index", select.selectedIndex);
       },
-      update({ node }) {
+      update({ node, changes }) {
         const select = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
@@ -13277,7 +13290,11 @@ var init_html = __esm({
           const option = make("option", {}, opt);
           select.append(option);
         });
-        select.value = oldValue;
+        if ("value" in changes) {
+          select.value = node.get("value");
+        } else {
+          select.value = oldValue;
+        }
       }
     });
     defNode({
@@ -13293,7 +13310,8 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: "Creates a HTML [`<input type=number>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number) element. Outputs the current value.",
+      doc: `Creates a HTML [\`<input type=number>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
+    element. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13312,14 +13330,16 @@ var init_html = __esm({
         });
         node.output("value", Number(input.value));
       },
-      update({ node }) {
+      update({ node, changes }) {
         const input = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
-        input.value = String(node.get("value"));
+        if ("value" in changes) {
+          input.value = String(node.get("value"));
+        }
       }
     });
     defNode({
@@ -13335,7 +13355,8 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: "Creates a HTML [`<input type=range>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range) slider. Outputs the current value.",
+      doc: `Creates a HTML [\`<input type=range>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
+    slider. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13355,14 +13376,16 @@ var init_html = __esm({
         });
         node.output("value", Number(input.value));
       },
-      update({ node }) {
+      update({ node, changes }) {
         const input = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
-        input.value = String(node.get("value"));
+        if ("value" in changes) {
+          input.value = String(node.get("value"));
+        }
       }
     });
     defNode({
@@ -13373,7 +13396,8 @@ var init_html = __esm({
         label: new Port("string", "Output")
       },
       outputs: {},
-      doc: "Creates a HTML [`<output>`](https://developer.mozilla.org/docs/Web/HTML/Element/output) element to display a value.",
+      doc: `Creates a HTML [\`<output>\`](https://developer.mozilla.org/docs/Web/HTML/Element/output)
+    element to display a value.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13405,7 +13429,8 @@ var init_html = __esm({
         label: new Port("string", "Meter")
       },
       outputs: {},
-      doc: "Creates a HTML [`<meter>`](https://developer.mozilla.org/docs/Web/HTML/Element/meter) element to display a scalar measurement.",
+      doc: `Creates a HTML [\`<meter>\`](https://developer.mozilla.org/docs/Web/HTML/Element/meter)
+    element to display a numeric measurement.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13423,7 +13448,7 @@ var init_html = __esm({
         meter.optimum = node.get("optimum");
         meter.value = node.get("value");
       },
-      update({ node }) {
+      update({ node, changes }) {
         const meter = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
@@ -13432,19 +13457,23 @@ var init_html = __esm({
         meter.low = node.get("low");
         meter.high = node.get("high");
         meter.optimum = node.get("optimum");
-        meter.value = node.get("value");
+        if ("value" in changes) {
+          meter.value = node.get("value");
+        }
       }
     });
     defNode({
       category: "User Interface",
       id: "text-input",
       inputs: {
-        label: new Port("string", "Text")
+        label: new Port("string", "Text"),
+        value: new Port("string", "")
       },
       outputs: {
         value: new Port("string", "")
       },
-      doc: "Creates a HTML [`<input type=text>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text) element with a label. Outputs the current value.",
+      doc: `Creates a HTML [\`<input type=text>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
+    element with a label. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13454,26 +13483,33 @@ var init_html = __esm({
         app2.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
+        input.value = node.get("value");
         input.addEventListener("input", () => {
           node.output("value", input.value);
         });
         node.output("value", input.value);
       },
-      update({ node }) {
+      update({ node, changes }) {
+        const input = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
+        if ("value" in changes) {
+          input.value = node.get("value");
+        }
       }
     });
     defNode({
       category: "User Interface",
       id: "color-input",
       inputs: {
-        label: new Port("string", "Color")
+        label: new Port("string", "Color"),
+        value: new Port("color", new Color(0, 0, 0))
       },
       outputs: {
         value: new Port("color", new Color(0, 0, 0))
       },
-      doc: "Creates a HTML [`<input type=color>`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color) element with a label. Outputs the current color value.",
+      doc: `Creates a HTML [\`<input type=color>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
+    element with a label. Outputs the current color value.`,
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
@@ -13483,14 +13519,55 @@ var init_html = __esm({
         app2.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
+        input.value = rgbToHex(node.get("value"));
         input.addEventListener("input", () => {
           node.output("value", new Color(...hexToRgb(input.value)));
         });
         node.output("value", new Color(...hexToRgb(input.value)));
       },
-      update({ node }) {
+      update({ node, changes }) {
+        const input = node.state.el;
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
+        if ("value" in changes) {
+          input.value = rgbToHex(node.get("value"));
+        }
+      }
+    });
+    defNode({
+      category: "User Interface",
+      id: "checkbox",
+      inputs: {
+        label: new Port("string", "Checkbox"),
+        checked: new Port("boolean", false)
+      },
+      outputs: {
+        value: new Port("boolean", false)
+      },
+      doc: `Creates a HTML [\`<input type=checkbox>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
+    element with a label. Outputs the checked state as a boolean.`,
+      stateKeys: ["el", "labelText"],
+      setup({ app: app2, node }) {
+        const labelEl = make("label");
+        const labelText = make("span", {}, node.get("label"));
+        const input = make("input", { type: "checkbox" });
+        labelEl.append(labelText, input);
+        app2.addUI(labelEl);
+        node.state.el = input;
+        node.state.labelText = labelText;
+        input.checked = !!node.get("checked");
+        input.addEventListener("change", () => {
+          node.output("value", input.checked);
+        });
+        node.output("value", input.checked);
+      },
+      update({ node, changes }) {
+        const input = node.state.el;
+        const labelText = node.state.labelText;
+        labelText.textContent = node.get("label");
+        if ("checked" in changes) {
+          input.checked = !!node.get("checked");
+        }
       }
     });
   }
@@ -13553,57 +13630,18 @@ var init_converters = __esm({
   }
 });
 
-// src/common/feature.ts
-var Feature;
-var init_feature = __esm({
-  "src/common/feature.ts"() {
-    "use strict";
-    Feature = class {
-      #didInit = false;
-      doc;
-      initializer;
-      constructor(init2, methods) {
-        Object.assign(this, methods);
-        this.initializer = init2;
-      }
-      async init(flow) {
-        if (this.#didInit) return;
-        await this.initializer(flow);
-        this.#didInit = true;
-      }
-    };
-  }
-});
-
 // src/nodes/features/gps.ts
 var gps_exports = {};
 var init_gps = __esm({
   "src/nodes/features/gps.ts"() {
     "use strict";
-    init_feature();
     init_nodeDef();
-    init_all();
     init_otherTypes();
-    defFeature("geolocation", new Feature(async () => {
-      const result = await navigator.permissions.query({ name: "geolocation" });
-      if (result.name === "denied")
-        throw new RangeError("This app needs to know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
-      if (result.name == "prompt")
-        navigator.geolocation.getCurrentPosition(() => {
-        }, () => {
-        }, { enableHighAccuracy: true });
-    }, {
-      doc: `Accesses the device's current GPS location and makes position updates available to the app.
-    If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
-      watch(cbOK, cbErr) {
-        navigator.geolocation.watchPosition(cbOK, cbErr, { enableHighAccuracy: true });
-      }
-    }));
+    init_all();
     defNode({
       id: "gps",
       category: "Device",
       inputs: {},
-      features: ["geolocation"],
       outputs: {
         pos: new Port("point", Point.EMPTY),
         altitude: new Port("number", 0),
@@ -13616,8 +13654,8 @@ var init_gps = __esm({
 
     Altitude, heading, and speed may not be available or may be totally incorrect depending on your device.
     (Mine always returns 0 for altitude even though I am most certainly not at sea level.)`,
-      setup({ app: app2, node, features }) {
-        features.geolocation.watch((arg) => {
+      setup({ app: app2, node }) {
+        navigator.geolocation.watchPosition((arg) => {
           const coords = arg.coords;
           console.log(coords);
           node.output("pos", new Point(coords.longitude, coords.latitude));
@@ -13640,6 +13678,28 @@ var init_gps = __esm({
         });
       }
     });
+  }
+});
+
+// src/common/feature.ts
+var Feature;
+var init_feature = __esm({
+  "src/common/feature.ts"() {
+    "use strict";
+    Feature = class {
+      #didInit = false;
+      doc;
+      initializer;
+      constructor(init2, methods) {
+        Object.assign(this, methods);
+        this.initializer = init2;
+      }
+      async init(flow) {
+        if (this.#didInit) return;
+        await this.initializer(flow);
+        this.#didInit = true;
+      }
+    };
   }
 });
 
@@ -14946,6 +15006,17 @@ function typeOf(obj) {
   if (obj instanceof LSymbol) return "symbol";
   return "unknown";
 }
+function fixTypeOf(obj) {
+  const color_regex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
+  if (typeof obj === "string") {
+    const res = color_regex.exec(obj);
+    if (res) {
+      const [, r, g, b] = res;
+      return { fixedVal: new Color(parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)), realType: "color" };
+    }
+  }
+  return { fixedVal: obj, realType: typeOf(obj) };
+}
 function getGroundTypes(type2) {
   if (type2 === "any") return ["number", "bigint", "string", "symbol", "boolean", "color", "point"];
   if (type2 === "number") return ["number", "bigint", "boolean"];
@@ -15182,12 +15253,13 @@ function implicit1(s) {
       ));
       break;
     }
-    const implicitNode = createImplicitSuperposition(s.asWritten, keyName, keyVal, typeOf(keyVal));
+    const { fixedVal, realType } = fixTypeOf(keyVal);
+    const implicitNode = createImplicitSuperposition(s.asWritten, keyName, fixedVal, realType);
     nodes.push(implicitNode);
     links.push({
       from: implicitNode,
       to: s,
-      portRefs: [new PortRef("value", keyVal), new PortRef(keyName)],
+      portRefs: [new PortRef("value", fixedVal), new PortRef(keyName)],
       isImplicitConnection: true
     });
   }
