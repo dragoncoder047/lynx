@@ -13,6 +13,7 @@ const nodesContainer = get("#nodes-container")!;
 
 const FEATURE_ID_PREFIX = "feat-";
 const NODE_ID_PREFIX = "node-";
+const CATEGORY_ID_PREFIX = "category-";
 
 function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Set<string>>) {
     const li = make("li");
@@ -61,15 +62,38 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
     }
 }
 
-const nodesById = Object.groupBy(NODES, x => x.id);
 const featuresByNodesUsing: Record<string, Set<string>> = {};
-for (var id of Object.keys(nodesById).sort()) {
-    nodesContainer.append(make("h3", { id: NODE_ID_PREFIX + id },
-        make("code", {}, id)));
-    const ul = make("ul");
-    nodesContainer.append(ul);
-    for (var variant of nodesById[id]!) {
-        docNode(variant, ul, featuresByNodesUsing);
+
+// Group nodes by category, then by id
+const nodesByCategory: Record<string, typeof NODES> = {};
+for (const node of NODES) {
+    const cat = node.category || "Uncategorized";
+    (nodesByCategory[cat] ??= []).push(node);
+}
+
+const sortedCategories = Object.keys(nodesByCategory).sort();
+
+// Table of contents for categories
+nodesContainer.append(make("ul", {},
+    ...sortedCategories.map(cat =>
+        make("li", {},
+            make("a", { href: `#${CATEGORY_ID_PREFIX}${cat.toLowerCase().replaceAll(" ", "-")}` }, cat)
+        )
+    )
+));
+
+for (const cat of sortedCategories) {
+    nodesContainer.append(make("h3", { id: CATEGORY_ID_PREFIX + cat.toLowerCase().replaceAll(" ", "-") }, cat));
+    const nodesInCat = nodesByCategory[cat] ?? [];
+    const nodesById = Object.groupBy(nodesInCat, x => x.id);
+    for (const id of Object.keys(nodesById).sort()) {
+        nodesContainer.append(make("h4", { id: NODE_ID_PREFIX + id },
+            make("code", {}, id)));
+        const ul = make("ul");
+        nodesContainer.append(ul);
+        for (const variant of nodesById[id] ?? []) {
+            docNode(variant, ul, featuresByNodesUsing);
+        }
     }
 }
 

@@ -2,6 +2,7 @@ import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
+    category: "Flow Control",
     id: "value",
     template: { T: ["any"] },
     doc: `Emits the same value every time when it is updated
@@ -19,6 +20,7 @@ defNode({
 });
 
 defNode({
+    category: "Flow Control",
     id: "edges",
     doc: `Emits a signal on \`:rising\` when \`:value\` changes from
     false to true, and a signal on \`:falling\` when \`:value\` changes

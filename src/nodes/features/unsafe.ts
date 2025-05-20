@@ -32,7 +32,9 @@ defNode({
     features: ["unsafe-code"],
     doc: `Transforms the input and output values using a Scheme function.
 
-    The value of the inputs is available in the variable \`$inputs\`, and the node object is available in the variable \`$node\`. Whatever array the function returns will be passed to the output.
+    The value of the inputs is available in the variable \`$inputs\`, the node object is available
+    in the variable \`$node\`, and the app context is available in the variable \`$app\`.
+    Whatever array the function returns will be passed to the output.
 
     If \`#<void>\` (JS \`undefined\`) is returned, the node will not update its outputs.`,
     async setup({ node, features, args }) {
@@ -43,7 +45,7 @@ defNode({
         const code = cons(
             s("lambda"),
             cons(
-                cons(s("$inputs"), cons(s("$node"), nil)),
+                cons(s("$inputs"), cons(s("$node"), cons(s("$app"), nil))),
                 arrayToConsList(args)));
         console.log(code.toString());
         node.state.func = (await exec(code))[0];
@@ -52,7 +54,7 @@ defNode({
         const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         var value;
         try {
-            value = await node.state.func(arrayToConsList(node.get("inputs")), node);
+            value = await node.state.func(arrayToConsList(node.get("inputs")), node, app);
         } catch (e: any) {
             app.error(e);
             console.error(e);

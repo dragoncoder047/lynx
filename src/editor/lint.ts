@@ -33,8 +33,8 @@ function showLint(editSession: ace.EditSession, errors: LynxError[]) {
     editSession.clearAnnotations();
     editSession.setAnnotations(onlySev.map(err => {
         return {
-            row: err.line - 1,
-            column: err.col,
+            row: (err.line ?? 1) - 1,
+            column: (err.col ?? 0),
             text: err.message ?? `${err.line}:${err.col}(${err.len}) ${err.message}`,
             type: "error",
         };

@@ -2,6 +2,7 @@ import { Port } from "../../common/nodeDef";
 import { defNode } from "../all";
 
 defNode({
+    category: "Logic",
     id: "not",
     inputs: {
         input: new Port("boolean", false),
@@ -16,6 +17,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "and",
     inputs: {
         a: new Port("boolean", false),
@@ -31,6 +33,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "and",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
@@ -45,6 +48,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "or",
     inputs: {
         a: new Port("boolean", false),
@@ -60,6 +64,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "or",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
@@ -74,6 +79,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "xor",
     inputs: {
         a: new Port("boolean", false),
@@ -89,6 +95,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "xor",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
@@ -104,6 +111,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "nand",
     inputs: {
         a: new Port("boolean", false),
@@ -119,6 +127,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "nand",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
@@ -133,6 +142,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "nor",
     inputs: {
         a: new Port("boolean", false),
@@ -148,6 +158,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "nor",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
@@ -162,6 +173,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "xnor",
     inputs: {
         a: new Port("boolean", false),
@@ -177,6 +189,7 @@ defNode({
 });
 
 defNode({
+    category: "Logic",
     id: "xnor",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),

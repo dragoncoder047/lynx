@@ -425,14 +425,12 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
     const connCache: ConnCache = new Map;
     const superCache: SuperCache = new Map;
     const errors: LynxError[] = [];
-    console.log(nodes);
     for (var conn of connections) {
         for (var c1 of conn.from.concretes) {
             for (var c2 of conn.to.concretes) {
                 var res = getCache(connCache, c1, c2, conn);
                 if (res === undefined) {
                     res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
-                    console.log(c1, c2, res);
                     putCache(connCache, c1, c2, conn, res);
                     saveSuperCache(superCache, nodes, c1, res);
                     saveSuperCache(superCache, nodes, c2, res);
@@ -465,7 +463,6 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
         const defsSet = new Set(csNoErrors.map(c => c.def));
         const firstConcrete = csNoErrors[0]!;
         const firstDef = firstConcrete.def;
-        console.log(node, defsSet);
         if (defsSet.size > 1) {
             errors.push(makePosError(`Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
                 node.sym, LynxError.BAD_CONN_SPEC));
@@ -489,7 +486,6 @@ function wfc(nodes: Set<Superposition>, connections: Set<ConnectionSpec>): { con
             continue;
         }
         if (res === undefined) {
-            console.error(conn.from, conn.to);
             throw new RangeError("unreachable");
         }
         realConnections.push({

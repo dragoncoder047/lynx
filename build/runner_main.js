@@ -13111,6 +13111,26 @@ var init_utils = __esm({
   }
 });
 
+// src/nodes/basic.ts
+var basic_exports = {};
+var init_basic = __esm({
+  "src/nodes/basic.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      category: "Basic",
+      id: "log",
+      inputs: { values: new Port("any", [], ["bus"]) },
+      outputs: {},
+      doc: "Logs the values whenever one of them updates.",
+      update({ app: app2, node }) {
+        app2.log(node.get("values").join(" "));
+      }
+    });
+  }
+});
+
 // src/nodes/flow_control.ts
 var flow_control_exports = {};
 var init_flow_control = __esm({
@@ -13119,6 +13139,7 @@ var init_flow_control = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "Flow Control",
       id: "value",
       template: { T: ["any"] },
       doc: `Emits the same value every time when it is updated
@@ -13135,6 +13156,7 @@ var init_flow_control = __esm({
       }
     });
     defNode({
+      category: "Flow Control",
       id: "edges",
       doc: `Emits a signal on \`:rising\` when \`:value\` changes from
     false to true, and a signal on \`:falling\` when \`:value\` changes
@@ -13171,6 +13193,7 @@ var init_html = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "User Interface",
       id: "button",
       inputs: {
         text: new Port("string", "Button")
@@ -13200,11 +13223,12 @@ var init_html = __esm({
         node.output("hovering", false);
         node.output("pressed", false);
       },
-      update({ node, changes }) {
-        node.state.el.textContent = changes.text;
+      update({ node }) {
+        node.state.el.textContent = node.get("text");
       }
     });
     defNode({
+      category: "User Interface",
       id: "select",
       inputs: {
         options: new Port("string", [], ["bus"]),
@@ -13218,7 +13242,7 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const select = make("select");
         labelEl.append(labelText, select);
         app2.addUI(labelEl);
@@ -13235,10 +13259,10 @@ var init_html = __esm({
         node.output("value", select.value);
         node.output("index", select.selectedIndex);
       },
-      update({ node, changes }) {
+      update({ node }) {
         const select = node.state.el;
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
+        labelText.textContent = node.get("label");
         const oldValue = select.value;
         select.innerHTML = "";
         (node.get("options") || []).forEach((opt) => {
@@ -13249,7 +13273,8 @@ var init_html = __esm({
       }
     });
     defNode({
-      id: "number_input",
+      category: "User Interface",
+      id: "number-input",
       inputs: {
         value: new Port("number", 0),
         min: new Port("number", 0),
@@ -13264,7 +13289,7 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "number" });
         labelEl.append(labelText, input);
         app2.addUI(labelEl);
@@ -13279,10 +13304,10 @@ var init_html = __esm({
         });
         node.output("value", Number(input.value));
       },
-      update({ node, changes }) {
+      update({ node }) {
         const input = node.state.el;
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
+        labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
@@ -13290,7 +13315,8 @@ var init_html = __esm({
       }
     });
     defNode({
-      id: "range_input",
+      category: "User Interface",
+      id: "range",
       inputs: {
         value: new Port("number", 0),
         min: new Port("number", 0),
@@ -13305,7 +13331,7 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const input = make("input", { type: "range" });
         labelEl.append(input);
@@ -13321,10 +13347,10 @@ var init_html = __esm({
         });
         node.output("value", Number(input.value));
       },
-      update({ node, changes }) {
+      update({ node }) {
         const input = node.state.el;
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
+        labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
@@ -13332,9 +13358,10 @@ var init_html = __esm({
       }
     });
     defNode({
-      id: "output_display",
+      category: "User Interface",
+      id: "output",
       inputs: {
-        value: new Port("string", ""),
+        value: new Port("any", ""),
         label: new Port("string", "Output")
       },
       outputs: {},
@@ -13342,7 +13369,7 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const output = make("output");
         labelEl.append(labelText, output);
         app2.addUI(labelEl);
@@ -13350,14 +13377,15 @@ var init_html = __esm({
         node.state.labelText = labelText;
         output.textContent = node.get("value");
       },
-      update({ node, changes }) {
+      update({ node }) {
         const output = node.state.el;
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
-        output.textContent = changes.value;
+        labelText.textContent = node.get("label");
+        output.value = String(node.get("value"));
       }
     });
     defNode({
+      category: "User Interface",
       id: "meter",
       inputs: {
         value: new Port("number", 0),
@@ -13373,7 +13401,7 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const meter = make("meter");
         labelEl.append(meter);
@@ -13387,10 +13415,10 @@ var init_html = __esm({
         meter.optimum = node.get("optimum");
         meter.value = node.get("value");
       },
-      update({ node, changes }) {
+      update({ node }) {
         const meter = node.state.el;
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
+        labelText.textContent = node.get("label");
         meter.min = node.get("min");
         meter.max = node.get("max");
         meter.low = node.get("low");
@@ -13400,7 +13428,8 @@ var init_html = __esm({
       }
     });
     defNode({
-      id: "text_input",
+      category: "User Interface",
+      id: "text-input",
       inputs: {
         label: new Port("string", "Text")
       },
@@ -13411,40 +13440,20 @@ var init_html = __esm({
       stateKeys: ["el", "labelText"],
       setup({ app: app2, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "text" });
         labelEl.append(labelText, input);
         app2.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
-        input.addEventListener("input", () => {
+        input.addEventListener("change", () => {
           node.output("value", input.value);
         });
         node.output("value", input.value);
       },
-      update({ node, changes }) {
-        const input = node.state.el;
+      update({ node }) {
         const labelText = node.state.labelText;
-        labelText.nodeValue = changes.label;
-      }
-    });
-  }
-});
-
-// src/nodes/simple.ts
-var simple_exports = {};
-var init_simple = __esm({
-  "src/nodes/simple.ts"() {
-    "use strict";
-    init_nodeDef();
-    init_all();
-    defNode({
-      id: "log",
-      inputs: { values: new Port("any", [], ["bus"]) },
-      outputs: {},
-      doc: "Logs the values whenever one of them updates.",
-      update({ app: app2, node }) {
-        app2.log(node.get("values").join(" "));
+        labelText.textContent = node.get("label");
       }
     });
   }
@@ -13458,6 +13467,7 @@ var init_converters = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "Converters",
       id: "string->number",
       inputs: {
         string: new Port("string", "")
@@ -13474,6 +13484,7 @@ var init_converters = __esm({
       }
     });
     defNode({
+      category: "Converters",
       id: "to-string",
       inputs: {
         what: new Port("any", void 0)
@@ -13498,6 +13509,7 @@ var init_random = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "Numbers",
       id: "random",
       inputs: { randomize: new Port("signal", void 0) },
       outputs: { value: new Port("number", "a random value") },
@@ -13546,7 +13558,7 @@ var init_gps = __esm({
     defFeature("geolocation", new Feature(async () => {
       const result = await navigator.permissions.query({ name: "geolocation" });
       if (result.name === "denied")
-        throw new RangeError("This app need sto know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
+        throw new RangeError("This app needs to know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
       if (result.name == "prompt")
         navigator.geolocation.getCurrentPosition(() => {
         }, () => {
@@ -13555,12 +13567,12 @@ var init_gps = __esm({
       doc: `Accesses the device's current GPS location and makes position updates available to the app.
     If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
       watch(cbOK, cbErr) {
-        navigator.geolocation.getCurrentPosition(cbOK, cbErr, { enableHighAccuracy: true });
         navigator.geolocation.watchPosition(cbOK, cbErr, { enableHighAccuracy: true });
       }
     }));
     defNode({
       id: "gps",
+      category: "Device",
       inputs: {},
       features: ["geolocation"],
       outputs: {
@@ -13587,13 +13599,13 @@ var init_gps = __esm({
           console.error(err);
           switch (err.code) {
             case GeolocationPositionError.PERMISSION_DENIED:
-              app2.error("Permission denied when getting geolocation data.");
+              app2.error(err.message ?? "Permission denied to access geolocation data");
               break;
             case GeolocationPositionError.POSITION_UNAVAILABLE:
-              app2.warn("Geolocation is not available");
+              app2.warn(err.message ?? "Error getting geolocation data");
               break;
             case GeolocationPositionError.TIMEOUT:
-              app2.warn("Timed out trying to get geolocation");
+              app2.warn(err.message ?? "Timed out trying to get geolocation data");
               break;
           }
         });
@@ -13643,7 +13655,9 @@ var init_unsafe = __esm({
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
 
-    The value of the inputs is available in the variable \`$inputs\`, and the node object is available in the variable \`$node\`. Whatever array the function returns will be passed to the output.
+    The value of the inputs is available in the variable \`$inputs\`, the node object is available
+    in the variable \`$node\`, and the app context is available in the variable \`$app\`.
+    Whatever array the function returns will be passed to the output.
 
     If \`#<void>\` (JS \`undefined\`) is returned, the node will not update its outputs.`,
       async setup({ node, features, args }) {
@@ -13654,7 +13668,7 @@ var init_unsafe = __esm({
         const code = cons(
           s("lambda"),
           cons(
-            cons(s("$inputs"), cons(s("$node"), _nil)),
+            cons(s("$inputs"), cons(s("$node"), cons(s("$app"), _nil))),
             arrayToConsList(args)
           )
         );
@@ -13665,7 +13679,7 @@ var init_unsafe = __esm({
         const arrayToConsList = user_env.get("vector->list");
         var value;
         try {
-          value = await node.state.func(arrayToConsList(node.get("inputs")), node);
+          value = await node.state.func(arrayToConsList(node.get("inputs")), node, app2);
         } catch (e75) {
           app2.error(e75);
           console.error(e75);
@@ -13687,6 +13701,7 @@ var init_clock = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "Timing",
       id: "clock",
       inputs: {
         interval: new Port("number", 1e3),
@@ -13715,7 +13730,7 @@ var init_clock = __esm({
         }
         node.state.lastTickTime = now;
         if (node.state.elapsedTime >= node.get("interval")) {
-          node.state.elapsedTime = 0;
+          node.state.elapsedTime -= node.get("interval");
           node.output("clock");
         }
       }
@@ -13731,6 +13746,7 @@ var init_logic = __esm({
     init_nodeDef();
     init_all();
     defNode({
+      category: "Logic",
       id: "not",
       inputs: {
         input: new Port("boolean", false)
@@ -13744,6 +13760,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "and",
       inputs: {
         a: new Port("boolean", false),
@@ -13758,6 +13775,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "and",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13771,6 +13789,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "or",
       inputs: {
         a: new Port("boolean", false),
@@ -13785,6 +13804,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "or",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13798,6 +13818,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "xor",
       inputs: {
         a: new Port("boolean", false),
@@ -13812,6 +13833,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "xor",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13826,6 +13848,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "nand",
       inputs: {
         a: new Port("boolean", false),
@@ -13840,6 +13863,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "nand",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13853,6 +13877,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "nor",
       inputs: {
         a: new Port("boolean", false),
@@ -13867,6 +13892,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "nor",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13880,6 +13906,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "xnor",
       inputs: {
         a: new Port("boolean", false),
@@ -13894,6 +13921,7 @@ var init_logic = __esm({
       }
     });
     defNode({
+      category: "Logic",
       id: "xnor",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
@@ -13905,6 +13933,78 @@ var init_logic = __esm({
       update({ node, changes }) {
         const count = changes.inputs.filter(Boolean).length;
         node.output("output", count % 2 === 0);
+      }
+    });
+  }
+});
+
+// src/nodes/electronics/latches.ts
+var latches_exports = {};
+var init_latches = __esm({
+  "src/nodes/electronics/latches.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      category: "Logic",
+      id: "d-latch",
+      template: { T: ["any"] },
+      inputs: {
+        d: new Port("T", void 0),
+        enable: new Port("boolean", false)
+      },
+      outputs: {
+        q: new Port("T", void 0)
+      },
+      stateKeys: ["q"],
+      doc: `D latch (transparent latch). When \`:enable\` is true, \`:q\` mirrors \`:d\`. When \`:enable\` is false, \`:q\` holds its value.`,
+      update({ node }) {
+        if (node.get("enable")) {
+          const oldQ = node.state.q;
+          node.state.q = node.get("d");
+          if (oldQ !== node.state.q)
+            node.output("q", node.state.q);
+        }
+      }
+    });
+    defNode({
+      category: "Logic",
+      id: "d-flipflop",
+      template: { T: ["any"] },
+      inputs: {
+        d: new Port("T", void 0, ["silent"]),
+        clock: new Port("signal", void 0)
+      },
+      outputs: {
+        q: new Port("T", false)
+      },
+      stateKeys: ["q"],
+      doc: `D flip-flop. When updated by \`:clock\`, \`:q\` is set to \`:d\`.`,
+      update({ node }) {
+        node.output("q", node.get("d"));
+      }
+    });
+    defNode({
+      category: "Logic",
+      id: "jk-flipflop",
+      inputs: {
+        j: new Port("boolean", false, ["silent"]),
+        k: new Port("boolean", false, ["silent"]),
+        clock: new Port("signal", void 0)
+      },
+      outputs: {
+        q: new Port("boolean", false)
+      },
+      stateKeys: ["q"],
+      doc: `JK flip-flop. When updated by \`:clock\`, \`:q\` is set if \`:j\` is true or
+    cleared if \`:k\` is true. If both are true at the same time, \`:q\` toggles.`,
+      setup({ node }) {
+        node.state.q = false;
+        node.output("q", false);
+      },
+      update({ node }) {
+        node.state.q = node.get("j") && !node.state.q || !node.get("k") && node.state.q;
+        node.output("q", node.state.q);
       }
     });
   }
@@ -13933,15 +14033,16 @@ var init_all = __esm({
   "src/nodes/all.ts"() {
     "use strict";
     modulesReady = Promise.all([
+      Promise.resolve().then(() => (init_basic(), basic_exports)),
       Promise.resolve().then(() => (init_flow_control(), flow_control_exports)),
       Promise.resolve().then(() => (init_html(), html_exports)),
-      Promise.resolve().then(() => (init_simple(), simple_exports)),
       Promise.resolve().then(() => (init_converters(), converters_exports)),
       Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
       Promise.resolve().then(() => (init_clock(), clock_exports)),
-      Promise.resolve().then(() => (init_logic(), logic_exports))
+      Promise.resolve().then(() => (init_logic(), logic_exports)),
+      Promise.resolve().then(() => (init_latches(), latches_exports))
     ]);
     NODES = [];
     FEATURES = [];
@@ -14568,14 +14669,12 @@ function wfc(nodes, connections) {
   const connCache = /* @__PURE__ */ new Map();
   const superCache = /* @__PURE__ */ new Map();
   const errors = [];
-  console.log(nodes);
   for (var conn of connections) {
     for (var c1 of conn.from.concretes) {
       for (var c2 of conn.to.concretes) {
         var res = getCache(connCache, c1, c2, conn);
         if (res === void 0) {
           res = tryConnect(c1, c2, conn.portRefs, conn.isImplicitConnection);
-          console.log(c1, c2, res);
           putCache(connCache, c1, c2, conn, res);
           saveSuperCache(superCache, nodes, c1, res);
           saveSuperCache(superCache, nodes, c2, res);
@@ -14608,7 +14707,6 @@ function wfc(nodes, connections) {
     const defsSet = new Set(csNoErrors.map((c) => c.def));
     const firstConcrete = csNoErrors[0];
     const firstDef = firstConcrete.def;
-    console.log(node, defsSet);
     if (defsSet.size > 1) {
       errors.push(makePosError(
         `Could not resolve variant of node "${node.asWritten.name}". Try connecting something else to it.`,
@@ -14633,7 +14731,6 @@ function wfc(nodes, connections) {
       continue;
     }
     if (res2 === void 0) {
-      console.error(conn.from, conn.to);
       throw new RangeError("unreachable");
     }
     realConnections.push({

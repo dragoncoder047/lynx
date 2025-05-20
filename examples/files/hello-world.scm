@@ -4,16 +4,27 @@
 ; examples on the main page. 
 (define *title* "Hello World")
 (define *description*
-  "A simple introduction to what Lynx can do.")
+  "A simple introduction to what Lynx can do: creating nodes,
+   linking them, and using implicit inputs. This example creates a button
+   that, when pressed, logs 'Hello, World!' in a very roundabout way.")
 (define *version* 1)
 (define *category* "Basic")
 (define *author* "dragoncoder047")
 (define *author-url* "https://dragoncoder047.github.io/")
 
-; Hover over each of the nodes (button, edges, value, and log)
-; below to see what they do.
-(chain (button "Click me!") :pressed
-       (edges) :rising
-       (value :value "World!") ::1 (log ::0 "Hello,")
-       ~ @button :hovering (edges) :rising ::1 (log ::0 "You are hovering on the button!")
-       ~ @edges :falling ::1 (log ::0 "You stopped hovering the button!"))
+(chain
+       ; Create a button with the text "Click me!".
+       (button "Click me!")
+       ; Create a trigger for when the button is pressed.
+       :pressed (edges) :rising
+       ; When the trigger fires, send the value "World!"...
+       (value :value "World!")
+       ; ...and log it with the prefix "Hello,".
+       ::1 (log ::0 "Hello,"))
+       ; Things to try:
+       ; * Switch the ::1 and ::0 above -- does that change the output?
+       ; * Change the ::1 to ::22 -- where is the extra space coming from?
+       ; * Change both to ::0 -- why does this not work?
+       ; * Change the :pressed to :released -- why does this not work?
+       ; * Change the :rising to :falling -- what happens when you hold the button down?
+       ; * Change the :pressed to :hovering -- what happens now?

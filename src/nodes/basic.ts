@@ -2,6 +2,7 @@ import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
+    category: "Basic",
     id: "log",
     inputs: { values: new Port("any", [], ["bus"]) },
     outputs: {},

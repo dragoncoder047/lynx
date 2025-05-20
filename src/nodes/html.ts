@@ -3,6 +3,7 @@ import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
+    category: "User Interface",
     id: "button",
     inputs: {
         text: new Port("string", "Button"),
@@ -32,12 +33,13 @@ defNode({
         node.output("hovering", false);
         node.output("pressed", false);
     },
-    update({ node, changes }) {
-        node.state.el.textContent = changes.text;
+    update({ node }) {
+        node.state.el.textContent = node.get("text");
     }
 });
 
 defNode({
+    category: "User Interface",
     id: "select",
     inputs: {
         options: new Port("string", [], ["bus"]),
@@ -51,7 +53,7 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const select = make("select");
         labelEl.append(labelText, select);
         app.addUI(labelEl);
@@ -68,10 +70,10 @@ defNode({
         node.output("value", select.value);
         node.output("index", select.selectedIndex);
     },
-    update({ node, changes }) {
+    update({ node }) {
         const select = node.state.el;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
         const oldValue = select.value;
         select.innerHTML = "";
         (node.get("options") || []).forEach((opt: string) => {
@@ -83,7 +85,8 @@ defNode({
 });
 
 defNode({
-    id: "number_input",
+    category: "User Interface",
+    id: "number-input",
     inputs: {
         value: new Port("number", 0),
         min: new Port("number", 0),
@@ -98,7 +101,7 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "number" });
         labelEl.append(labelText, input);
         app.addUI(labelEl);
@@ -113,10 +116,10 @@ defNode({
         });
         node.output("value", Number(input.value));
     },
-    update({ node, changes }) {
-        const input = node.state.el;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
+    update({ node }) {
+        const input = node.state.el as HTMLInputElement;
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
@@ -125,7 +128,8 @@ defNode({
 });
 
 defNode({
-    id: "range_input",
+    category: "User Interface",
+    id: "range",
     inputs: {
         value: new Port("number", 0),
         min: new Port("number", 0),
@@ -140,7 +144,7 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const input = make("input", { type: "range" });
         labelEl.append(input);
@@ -156,10 +160,10 @@ defNode({
         });
         node.output("value", Number(input.value));
     },
-    update({ node, changes }) {
+    update({ node }) {
         const input = node.state.el as HTMLInputElement;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
         input.min = String(node.get("min"));
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
@@ -168,9 +172,10 @@ defNode({
 });
 
 defNode({
-    id: "output_display",
+    category: "User Interface",
+    id: "output",
     inputs: {
-        value: new Port("string", ""),
+        value: new Port("any", ""),
         label: new Port("string", "Output"),
     },
     outputs: {},
@@ -178,7 +183,7 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const output = make("output");
         labelEl.append(labelText, output);
         app.addUI(labelEl);
@@ -186,15 +191,16 @@ defNode({
         node.state.labelText = labelText;
         output.textContent = node.get("value");
     },
-    update({ node, changes }) {
-        const output = node.state.el;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
-        output.textContent = changes.value;
+    update({ node }) {
+        const output = node.state.el as HTMLOutputElement;
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
+        output.value = String(node.get("value"));
     }
 });
 
 defNode({
+    category: "User Interface",
     id: "meter",
     inputs: {
         value: new Port("number", 0),
@@ -210,7 +216,7 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const meter = make("meter") as HTMLMeterElement;
         labelEl.append(meter);
@@ -224,10 +230,10 @@ defNode({
         meter.optimum = node.get("optimum");
         meter.value = node.get("value");
     },
-    update({ node, changes }) {
+    update({ node }) {
         const meter = node.state.el as HTMLMeterElement;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
         meter.min = node.get("min");
         meter.max = node.get("max");
         meter.low = node.get("low");
@@ -238,7 +244,8 @@ defNode({
 });
 
 defNode({
-    id: "text_input",
+    category: "User Interface",
+    id: "text-input",
     inputs: {
         label: new Port("string", "Text"),
     },
@@ -249,20 +256,19 @@ defNode({
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
         const labelEl = make("label");
-        const labelText = document.createTextNode(node.get("label"));
+        const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "text" });
         labelEl.append(labelText, input);
         app.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
-        input.addEventListener("input", () => {
+        input.addEventListener("change", () => {
             node.output("value", input.value);
         });
         node.output("value", input.value);
     },
-    update({ node, changes }) {
-        const input = node.state.el as HTMLInputElement;
-        const labelText = node.state.labelText as Text;
-        labelText.nodeValue = changes.label;
+    update({ node }) {
+        const labelText = node.state.labelText as HTMLSpanElement;
+        labelText.textContent = node.get("label");
     }
 });

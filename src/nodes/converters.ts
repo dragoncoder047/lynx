@@ -2,6 +2,7 @@ import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
+    category: "Converters",
     id: "string->number",
     inputs: {
         string: new Port("string", "")
@@ -18,6 +19,7 @@ defNode({
 });
 
 defNode({
+    category: "Converters",
     id: "to-string",
     inputs: {
         what: new Port("any", undefined),

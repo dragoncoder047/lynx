@@ -2,6 +2,7 @@ import { Port } from "../../common/nodeDef";
 import { defNode } from "../all";
 
 defNode({
+    category: "Timing",
     id: "clock",
     inputs: {
         interval: new Port("number", 1000),
@@ -31,7 +32,7 @@ defNode({
         node.state.lastTickTime = now;
         // Max 1 update per tick because limitations
         if (node.state.elapsedTime >= node.get("interval")) {
-            node.state.elapsedTime = 0;
+            node.state.elapsedTime -= node.get("interval");
             node.output("clock");
         }
     }

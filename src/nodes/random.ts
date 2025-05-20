@@ -2,6 +2,7 @@ import { Port } from "../common/nodeDef";
 import { defNode } from "./all";
 
 defNode({
+    category: "Numbers",
     id: "random",
     inputs: { randomize: new Port("signal", undefined) },
     outputs: { value: new Port("number", "a random value" as any) },

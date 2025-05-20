@@ -33,6 +33,7 @@ interface ConnectArg<IPN extends string, OPN extends string, G extends Generic, 
 
 export interface NodeDef<IPN extends string = any, OPN extends string = any, G extends Generic = any, SK extends string = any> {
     readonly id: string;
+    readonly category?: string;
     readonly template?: Record<G, TypeSpec[]>;
     readonly features?: string[];
     readonly inputs: Record<IPN, Port<any>>;

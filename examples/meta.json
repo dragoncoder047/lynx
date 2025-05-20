@@ -1,0 +1,10 @@
+{
+    "Basic": {
+        "order": 1,
+        "description": "Basic examples to get started."
+    },
+    "Advanced": {
+        "order": 2,
+        "description": "Advanced examples require a bit more programming knowledge compared to other examples."
+    }
+}

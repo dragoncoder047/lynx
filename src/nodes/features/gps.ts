@@ -6,7 +6,7 @@ import { Point } from "../../common/otherTypes";
 defFeature("geolocation", new Feature(async () => {
     const result = await navigator.permissions.query({ name: "geolocation" });
     if (result.name === "denied")
-        throw new RangeError("This app need sto know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
+        throw new RangeError("This app needs to know your geolocation, but you denied Lynx permission to access it. Check your browser settings and try again.");
     if (result.name == "prompt")
         // trigger the prompt
         navigator.geolocation.getCurrentPosition(() => { }, () => { }, { enableHighAccuracy: true });
@@ -14,15 +14,13 @@ defFeature("geolocation", new Feature(async () => {
     doc: `Accesses the device's current GPS location and makes position updates available to the app.
     If you haven't already granted permission, you will be prompted to let Lynx access your geolocation when the app starts.`,
     watch(cbOK: PositionCallback, cbErr: PositionErrorCallback) {
-        // first to start
-        navigator.geolocation.getCurrentPosition(cbOK, cbErr, { enableHighAccuracy: true });
-        // further changes
         navigator.geolocation.watchPosition(cbOK, cbErr, { enableHighAccuracy: true });
     }
 }));
 
 defNode({
     id: "gps",
+    category: "Device",
     inputs: {},
     features: ["geolocation"],
     outputs: {
@@ -49,13 +47,13 @@ defNode({
             console.error(err);
             switch (err.code) {
                 case GeolocationPositionError.PERMISSION_DENIED:
-                    app.error("Permission denied when getting geolocation data.");
+                    app.error(err.message ?? "Permission denied to access geolocation data");
                     break;
                 case GeolocationPositionError.POSITION_UNAVAILABLE:
-                    app.warn("Geolocation is not available");
+                    app.warn(err.message ?? "Error getting geolocation data");
                     break;
                 case GeolocationPositionError.TIMEOUT:
-                    app.warn("Timed out trying to get geolocation");
+                    app.warn(err.message ?? "Timed out trying to get geolocation data");
                     break;
             }
         });

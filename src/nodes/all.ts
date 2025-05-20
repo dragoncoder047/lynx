@@ -4,15 +4,16 @@ import { NodeDef } from "../common/nodeDef";
 import { Generic } from "../common/types";
 
 export const modulesReady = Promise.all([
+    import("./basic"),
     import("./flow_control"),
     import("./html"),
-    import("./simple"),
     import("./converters"),
     import("./random"),
     import("./features/gps"),
     import("./features/unsafe"),
     import("./electronics/clock"),
     import("./electronics/logic"),
+    import("./electronics/latches"),
 ]);
 
 export const NODES: NodeDef[] = [];
