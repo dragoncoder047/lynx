@@ -14,12 +14,12 @@
     * [ ] math
     * [ ] Custom equation using math.js
 * Input and output nodes:
-    * [ ] Buttons
+    * [X] Buttons
     * [ ] Switches
-    * [ ] Sliders
-    * [ ] Meters
+    * [X] Sliders
+    * [X] Meters
     * [ ] Virtual joysticks
-    * [ ] Number displays
+    * [X] Number displays
     * [ ] Oscilloscopes
     * [ ] Indicator lights
     * [ ] Use phone to control - separate app instance
@@ -42,27 +42,37 @@
                 * [ ] more channels?
             * [ ] Analyzer
             * [ ] Panner
-    * [ ] Gamepads
+        * [ ] Graphics!!
+            * [ ] Canvas
+            * [ ] Line objects
+            * [ ] Rectangle
+            * [ ] Fill
+            * [ ] Text drawing
+            * [ ] Scale
+            * [ ] Rotate
+            * [ ] Translate
+            * [ ] getUserMedia
+    * [X] Gamepads
     * [ ] Notifications
     * [ ] Vibration
     * [ ] Text-to-speech
     * [ ] Speech recognition
     * [ ] WebRTC/Presentation API for remote controller on phone??
 * Different types for data
-    * [ ] Number
-    * [ ] Float
-    * [ ] Integer
-    * [ ] String
-    * [ ] Boolean
+    * [X] Number
+    * [X] Float
+    * [X] Integer
+    * [X] String
+    * [X] Boolean
     * [ ] AudioStream
     * [ ] Image with composing (canvas api)
-    * [ ] 2D vector
+    * [X] 2D vector
     * [ ] 3D vector
-    * [ ] Color
-    * [ ] Trigger
+    * [X] Color
+    * [X] Trigger
     * [ ] Node reference (special)
 * [X] S-expression savefile format
-* [ ] "Bus" nodes that contain an array of data
+* [X] "Bus" nodes that contain an array of data
 
 ## Need to
 
@@ -77,17 +87,17 @@
     * [X] Partition groups `~`
     * [X] Reference Nth of bus port: number
 * [X] nodes that instantiate based on connections
-* [ ] unify generics and template mess into type params objects
-    * [ ] Make inputs' static values be in initializer params NOT anything specific
-* [ ] TYPESCRIPT
+* [X] unify generics and template mess into type params objects
+    * [X] Make inputs' static values be in initializer params NOT anything specific
+* [X] TYPESCRIPT
 * [ ] Write documentation
 * [X] Do linter in Ace
-    * [ ] Display error squiggles
-    * [X] Hover tooltips for nodes
+    * [X] Display error squiggles
+    * [ ] Hover tooltips for nodes
 * [X] Better error messages for nodes
     * [X] Node xxx has no input/output named :xxx
     * [X] Cannot determine variant to use
-* [ ] Fix variant assignment algorithm
+* [X] Fix variant assignment algorithm
     * [X] Process chains down to Node => NodeDef list variants map and \[Node, Node, symbol[]] list of links
     * WFC algorithm
         1. make map of node connection => any errors associated, and map of Node => NodeDef => template vars
