@@ -1,0 +1,15 @@
+(define *title* "Logic Gates")
+(define *description* "Demonstrates the use of all 6 logic gates.")
+(define *category* "Basic")
+
+(define A (select :label "A: " :options:1 "true" :options:0 "false"))
+(define B (select :label "B: " :options:1 "true" :options:0 "false"))
+(define C (select :label "C: " :options:1 "true" :options:0 "false"))
+
+(chain A (string->boolean) ::0 (every)    (output :label "AND: ")  ~ B (string->boolean) ::1 @every    ~ C (string->boolean) ::2 @every)
+(chain A (string->boolean) ::0 (some)     (output :label "OR: ")   ~ B (string->boolean) ::1 @some     ~ C (string->boolean) ::2 @some)
+(chain A (string->boolean) ::0 (parity-1) (output :label "XOR: ")  ~ B (string->boolean) ::1 @parity-1 ~ C (string->boolean) ::2 @parity-1)
+(chain A (string->boolean) ::0 (not-all)  (output :label "NAND: ") ~ B (string->boolean) ::1 @not-all  ~ C (string->boolean) ::2 @not-all)
+(chain A (string->boolean) ::0 (none)     (output :label "NOR: ")  ~ B (string->boolean) ::1 @none     ~ C (string->boolean) ::2 @none)
+(chain A (string->boolean) ::0 (parity-0) (output :label "XNOR: ") ~ B (string->boolean) ::1 @parity-0 ~ C (string->boolean) ::2 @parity-0)
+(chain A (string->boolean) (not)          (output :label "NOT A: "))

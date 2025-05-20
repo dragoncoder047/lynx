@@ -46,7 +46,7 @@ defNode({
         label: new Port("string", "Select"),
     },
     outputs: {
-        value: new Port("string", ""),
+        selected: new Port("string", ""),
         index: new Port("number", 0),
     },
     doc: "Creates a HTML [`<select>`](https://developer.mozilla.org/docs/Web/HTML/Element/select) dropdown. Takes an array of options and outputs the selected value and index.",
@@ -64,10 +64,10 @@ defNode({
             select.append(option);
         });
         select.addEventListener("change", () => {
-            node.output("value", select.value);
+            node.output("selected", select.value);
             node.output("index", select.selectedIndex);
         });
-        node.output("value", select.value);
+        node.output("selected", select.value);
         node.output("index", select.selectedIndex);
     },
     update({ node }) {
@@ -111,7 +111,7 @@ defNode({
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
         input.value = String(node.get("value"));
-        input.addEventListener("input", () => {
+        input.addEventListener("change", () => {
             node.output("value", Number(input.value));
         });
         node.output("value", Number(input.value));
@@ -262,7 +262,7 @@ defNode({
         app.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
-        input.addEventListener("change", () => {
+        input.addEventListener("input", () => {
             node.output("value", input.value);
         });
         node.output("value", input.value);

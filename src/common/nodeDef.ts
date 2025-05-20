@@ -12,6 +12,7 @@ interface UpdateArg<IPN extends string, OPN extends string, G extends Generic, S
 interface TickArg<IPN extends string, OPN extends string, G extends Generic, SK extends string> {
     readonly app: LynxFlow;
     readonly node: LynxNode<IPN, OPN, G, SK> & { def: NodeDef<IPN, OPN, G, SK> };
+    readonly dt: number;
 }
 
 interface SetupArg<IPN extends string, OPN extends string, G extends Generic, SK extends string> {

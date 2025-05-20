@@ -12,7 +12,7 @@ defNode({
     },
     doc: "Outputs the inverse of its input.",
     update({ node, changes }) {
-        node.output("output", !(changes.input));
+        node.output("output", !changes.input);
     }
 });
 
@@ -34,14 +34,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "and",
+    id: "every",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs true if all inputs are true and false otherwise (arbitrary number of inputs).",
+    doc: "Outputs true if all inputs are true and false otherwise. This is the any-number-of-inputs version of the AND gate.",
     update({ node, changes }) {
         node.output("output", Array.isArray(changes.inputs) ? changes.inputs.every(Boolean) : false);
     }
@@ -65,14 +65,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "or",
+    id: "some",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs false if all inputs are false and true otherwise (arbitrary number of inputs).",
+    doc: "Outputs false if all inputs are false and true otherwise. This is the any-number-of-inputs version of the OR gate.",
     update({ node, changes }) {
         node.output("output", changes.inputs.some(Boolean));
     }
@@ -96,14 +96,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "xor",
+    id: "parity-1",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs true if an odd number of inputs are true and false if an even number of inputs are true (arbitrary number of inputs).",
+    doc: "Outputs true if an odd number of inputs are true and false if an even number of inputs are true. This is the any-number-of-inputs version of the XOR gate.",
     update({ node, changes }) {
         const count = changes.inputs.filter(Boolean).length;
         node.output("output", count % 2 === 1);
@@ -128,14 +128,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "nand",
+    id: "not-all",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs true if at least one input is false and false if all inputs are true (arbitrary number of inputs).",
+    doc: "Outputs true if at least one input is false and false if all inputs are true. This is the any-number-of-inputs version of the NAND gate.",
     update({ node, changes }) {
         node.output("output", !changes.inputs.every(Boolean));
     }
@@ -159,14 +159,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "nor",
+    id: "none",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs true if all inputs are false and false if any are true (arbitrary number of inputs).",
+    doc: "Outputs true if all inputs are false and false if any are true. This is the any-number-of-inputs version of the NOR gate.",
     update({ node, changes }) {
         node.output("output", !changes.inputs.some(Boolean));
     }
@@ -190,14 +190,14 @@ defNode({
 
 defNode({
     category: "Logic",
-    id: "xnor",
+    id: "parity-0",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),
     },
     outputs: {
         output: new Port("boolean", true),
     },
-    doc: "Outputs true if an even number of inputs are true and false if an odd number of inputs are true (arbitrary number of inputs).",
+    doc: "Outputs true if an even number of inputs are true and false if an odd number of inputs are true. This is the any-number-of-inputs version of the XNOR gate.",
     update({ node, changes }) {
         const count = changes.inputs.filter(Boolean).length;
         node.output("output", count % 2 === 0);

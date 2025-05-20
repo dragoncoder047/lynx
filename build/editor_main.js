@@ -35896,7 +35896,7 @@ var init_html = __esm({
         label: new Port("string", "Select")
       },
       outputs: {
-        value: new Port("string", ""),
+        selected: new Port("string", ""),
         index: new Port("number", 0)
       },
       doc: "Creates a HTML [`<select>`](https://developer.mozilla.org/docs/Web/HTML/Element/select) dropdown. Takes an array of options and outputs the selected value and index.",
@@ -35914,10 +35914,10 @@ var init_html = __esm({
           select.append(option);
         });
         select.addEventListener("change", () => {
-          node.output("value", select.value);
+          node.output("selected", select.value);
           node.output("index", select.selectedIndex);
         });
-        node.output("value", select.value);
+        node.output("selected", select.value);
         node.output("index", select.selectedIndex);
       },
       update({ node }) {
@@ -35960,7 +35960,7 @@ var init_html = __esm({
         input.max = String(node.get("max"));
         input.step = String(node.get("step"));
         input.value = String(node.get("value"));
-        input.addEventListener("input", () => {
+        input.addEventListener("change", () => {
           node.output("value", Number(input.value));
         });
         node.output("value", Number(input.value));
@@ -36107,7 +36107,7 @@ var init_html = __esm({
         app.addUI(labelEl);
         node.state.el = input;
         node.state.labelText = labelText;
-        input.addEventListener("change", () => {
+        input.addEventListener("input", () => {
           node.output("value", input.value);
         });
         node.output("value", input.value);
@@ -36159,27 +36159,19 @@ var init_converters = __esm({
         node.output("stringified", changes.what.toString());
       }
     });
-  }
-});
-
-// src/nodes/random.ts
-var random_exports = {};
-var init_random = __esm({
-  "src/nodes/random.ts"() {
-    "use strict";
-    init_nodeDef();
-    init_all();
     defNode({
-      category: "Numbers",
-      id: "random",
-      inputs: { randomize: new Port("signal", void 0) },
-      outputs: { value: new Port("number", "a random value") },
-      doc: "Outputs a random value in the range [0, 1) when updated.",
-      setup({ node }) {
-        node.output("value", Math.random());
+      id: "string->boolean",
+      category: "Converters",
+      inputs: {
+        string: new Port("string", "")
       },
-      update({ node }) {
-        node.output("value", Math.random());
+      outputs: {
+        boolean: new Port("boolean", false)
+      },
+      doc: `Returns false if the string is the empty string or the string "false", and true otherwise.`,
+      update({ node, changes }) {
+        const str = changes.string.toString();
+        node.output("boolean", str !== "" && str.toLowerCase() !== "false");
       }
     });
   }
@@ -36354,6 +36346,204 @@ var init_unsafe = __esm({
   }
 });
 
+// src/nodes/math/arithmetic.ts
+var arithmetic_exports = {};
+var init_arithmetic = __esm({
+  "src/nodes/math/arithmetic.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "sum",
+      category: "Math",
+      template: { T: ["number"] },
+      inputs: {
+        values: new Port("T", [], ["bus"])
+      },
+      outputs: {
+        sum: new Port("T", 0)
+      },
+      doc: `Adds a bunch of numbers.`,
+      update({ node }) {
+        node.output("sum", node.get("values").reduce((a, b) => a + b, 0));
+      }
+    });
+    defNode({
+      id: "difference",
+      category: "Math",
+      template: { T: ["number"] },
+      inputs: {
+        a: new Port("T", 0),
+        b: new Port("T", 0)
+      },
+      outputs: {
+        difference: new Port("T", 0)
+      },
+      doc: `Subtracts two numbers, a - b.`,
+      update({ node }) {
+        node.output("difference", node.get("a") - node.get("b"));
+      }
+    });
+    defNode({
+      id: "product",
+      category: "Math",
+      template: { T: ["number"] },
+      inputs: {
+        values: new Port("T", [], ["bus"])
+      },
+      outputs: {
+        product: new Port("T", 1)
+      },
+      doc: `Multiplies a bunch of numbers.`,
+      update({ node }) {
+        node.output("product", node.get("values").reduce((a, b) => a * b, 1));
+      }
+    });
+    defNode({
+      id: "quotient",
+      category: "Math",
+      template: { T: ["number"] },
+      inputs: {
+        a: new Port("T", 1),
+        b: new Port("T", 1)
+      },
+      outputs: {
+        quotient: new Port("T", 1)
+      },
+      doc: `Divides two numbers, a / b.`,
+      update({ node }) {
+        node.output("quotient", node.get("a") / node.get("b"));
+      }
+    });
+    defNode({
+      id: "modulus",
+      category: "Math",
+      template: { T: ["number"] },
+      inputs: {
+        a: new Port("T", 1),
+        b: new Port("T", 1)
+      },
+      outputs: {
+        modulus: new Port("T", 1)
+      },
+      doc: `Calculates the modulus of two numbers, a % b.`,
+      update({ node }) {
+        node.output("modulus", node.get("a") % node.get("b"));
+      }
+    });
+  }
+});
+
+// src/nodes/math/statistics.ts
+var statistics_exports = {};
+var init_statistics = __esm({
+  "src/nodes/math/statistics.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "average",
+      category: "Statistics",
+      template: { T: ["number"] },
+      inputs: {
+        values: new Port("T", [], ["bus"])
+      },
+      outputs: {
+        average: new Port("T", 0)
+      },
+      doc: `Calculates the average (arithmetic mean) of a bunch of numbers.`,
+      update({ node }) {
+        const values = node.get("values");
+        node.output("average", values.reduce((a, b) => a + b, 0) / values.length);
+      }
+    });
+    defNode({
+      id: "variance",
+      category: "Statistics",
+      template: { T: ["number"] },
+      inputs: {
+        values: new Port("T", [], ["bus"])
+      },
+      outputs: {
+        variance: new Port("T", 0)
+      },
+      doc: `Calculates the variance of a bunch of numbers.`,
+      update({ node }) {
+        const values = node.get("values");
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        node.output("variance", values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
+      }
+    });
+  }
+});
+
+// src/nodes/math/random.ts
+var random_exports = {};
+var init_random = __esm({
+  "src/nodes/math/random.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      category: "Math",
+      id: "random",
+      inputs: { randomize: new Port("signal", void 0) },
+      outputs: { value: new Port("number", "a random value") },
+      doc: "Outputs a random value in the range [0, 1) when updated.",
+      setup({ node }) {
+        node.output("value", Math.random());
+      },
+      update({ node }) {
+        node.output("value", Math.random());
+      }
+    });
+  }
+});
+
+// src/nodes/math/calculus.ts
+var calculus_exports = {};
+var init_calculus = __esm({
+  "src/nodes/math/calculus.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "integrate",
+      category: "Calculus",
+      inputs: {
+        df: new Port("number", 0)
+      },
+      outputs: {
+        f: new Port("number", 0)
+      },
+      doc: `Calculates the time integral of the input value.`,
+      tick({ node, dt }) {
+        node.output("f", node.get("df") * dt + node.outputCurrentValues.f);
+      }
+    });
+    defNode({
+      id: "derivative",
+      category: "Calculus",
+      inputs: {
+        f: new Port("number", 0)
+      },
+      outputs: {
+        df: new Port("number", 0)
+      },
+      stateKeys: ["old_df"],
+      doc: `Calculates the time derivative of the input value.`,
+      setup({ node }) {
+        node.state.old_df = 0;
+      },
+      tick({ node, dt }) {
+        const f = node.get("f");
+        node.output("df", (f - node.state.old_df) / dt);
+        node.state.old_df = f;
+      }
+    });
+  }
+});
+
 // src/nodes/electronics/clock.ts
 var clock_exports = {};
 var init_clock = __esm({
@@ -36372,24 +36562,20 @@ var init_clock = __esm({
       outputs: {
         clock: new Port("signal", void 0)
       },
-      stateKeys: ["elapsedTime", "lastTickTime"],
+      stateKeys: ["elapsedTime"],
       doc: "Updates connected nodes every N milliseconds.",
       setup({ node }) {
         node.state.elapsedTime = 0;
-        node.state.lastTickTime = 0;
       },
       update({ node, changes }) {
         if (changes.reset) {
           node.state.elapsedTime = 0;
         }
       },
-      tick({ node }) {
-        const now = performance.now();
-        const dt = now - node.state.lastTickTime;
+      tick({ node, dt }) {
         if (!node.get("paused")) {
-          node.state.elapsedTime += dt;
+          node.state.elapsedTime += dt * 1e3;
         }
-        node.state.lastTickTime = now;
         if (node.state.elapsedTime >= node.get("interval")) {
           node.state.elapsedTime -= node.get("interval");
           node.output("clock");
@@ -36437,14 +36623,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "and",
+      id: "every",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs true if all inputs are true and false otherwise (arbitrary number of inputs).",
+      doc: "Outputs true if all inputs are true and false otherwise. This is the any-number-of-inputs version of the AND gate.",
       update({ node, changes }) {
         node.output("output", Array.isArray(changes.inputs) ? changes.inputs.every(Boolean) : false);
       }
@@ -36466,14 +36652,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "or",
+      id: "some",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs false if all inputs are false and true otherwise (arbitrary number of inputs).",
+      doc: "Outputs false if all inputs are false and true otherwise. This is the any-number-of-inputs version of the OR gate.",
       update({ node, changes }) {
         node.output("output", changes.inputs.some(Boolean));
       }
@@ -36495,14 +36681,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "xor",
+      id: "parity-1",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs true if an odd number of inputs are true and false if an even number of inputs are true (arbitrary number of inputs).",
+      doc: "Outputs true if an odd number of inputs are true and false if an even number of inputs are true. This is the any-number-of-inputs version of the XOR gate.",
       update({ node, changes }) {
         const count = changes.inputs.filter(Boolean).length;
         node.output("output", count % 2 === 1);
@@ -36525,14 +36711,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "nand",
+      id: "not-all",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs true if at least one input is false and false if all inputs are true (arbitrary number of inputs).",
+      doc: "Outputs true if at least one input is false and false if all inputs are true. This is the any-number-of-inputs version of the NAND gate.",
       update({ node, changes }) {
         node.output("output", !changes.inputs.every(Boolean));
       }
@@ -36554,14 +36740,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "nor",
+      id: "none",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs true if all inputs are false and false if any are true (arbitrary number of inputs).",
+      doc: "Outputs true if all inputs are false and false if any are true. This is the any-number-of-inputs version of the NOR gate.",
       update({ node, changes }) {
         node.output("output", !changes.inputs.some(Boolean));
       }
@@ -36583,14 +36769,14 @@ var init_logic = __esm({
     });
     defNode({
       category: "Logic",
-      id: "xnor",
+      id: "parity-0",
       inputs: {
         inputs: new Port("boolean", [], ["bus"])
       },
       outputs: {
         output: new Port("boolean", true)
       },
-      doc: "Outputs true if an even number of inputs are true and false if an odd number of inputs are true (arbitrary number of inputs).",
+      doc: "Outputs true if an even number of inputs are true and false if an odd number of inputs are true. This is the any-number-of-inputs version of the XNOR gate.",
       update({ node, changes }) {
         const count = changes.inputs.filter(Boolean).length;
         node.output("output", count % 2 === 0);
@@ -36671,6 +36857,52 @@ var init_latches = __esm({
   }
 });
 
+// src/nodes/electronics/mux.ts
+var mux_exports = {};
+var init_mux = __esm({
+  "src/nodes/electronics/mux.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "demultiplexer",
+      category: "Flow Control",
+      template: { T: ["any"] },
+      inputs: {
+        value: new Port("T", void 0),
+        select: new Port("number", 0)
+      },
+      outputs: {
+        out: new Port("T", [], ["bus"])
+      },
+      doc: `A demultiplexer. Takes a single input and routes it to one of several outputs based on the select input.`,
+      update({ node }) {
+        node.output("out", node.get("value"), node.get("select"));
+      }
+    });
+    defNode({
+      id: "multiplexer",
+      category: "Flow Control",
+      template: { T: ["any"] },
+      inputs: {
+        select: new Port("number", 0),
+        in: new Port("T", [], ["bus"])
+      },
+      outputs: {
+        out: new Port("T", void 0)
+      },
+      doc: `A multiplexer. Takes several inputs and routes one of them to the output based on the select input.`,
+      update({ node }) {
+        const oldValue = node.outputCurrentValues.out;
+        const newValue = node.get("in")[node.get("select")];
+        if (oldValue !== newValue) {
+          node.output("out", newValue);
+        }
+      }
+    });
+  }
+});
+
 // src/nodes/all.ts
 async function loadAllNodes(app) {
   await modulesReady;
@@ -36698,12 +36930,16 @@ var init_all = __esm({
       Promise.resolve().then(() => (init_flow_control(), flow_control_exports)),
       Promise.resolve().then(() => (init_html(), html_exports)),
       Promise.resolve().then(() => (init_converters(), converters_exports)),
-      Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
+      Promise.resolve().then(() => (init_arithmetic(), arithmetic_exports)),
+      Promise.resolve().then(() => (init_statistics(), statistics_exports)),
+      Promise.resolve().then(() => (init_random(), random_exports)),
+      Promise.resolve().then(() => (init_calculus(), calculus_exports)),
       Promise.resolve().then(() => (init_clock(), clock_exports)),
       Promise.resolve().then(() => (init_logic(), logic_exports)),
-      Promise.resolve().then(() => (init_latches(), latches_exports))
+      Promise.resolve().then(() => (init_latches(), latches_exports)),
+      Promise.resolve().then(() => (init_mux(), mux_exports))
     ]);
     NODES = [];
     FEATURES = [];
@@ -37034,12 +37270,13 @@ var LynxNode = class {
     else this.#changes[name] = this.inputCurrentValues[name].with(bi, value);
     console.log("updated change", name, this.#changes[name]);
   }
-  async tick(app) {
+  async tick(app, dt) {
     if (this.def === void 0)
       nodeComplain(this, "Node has no definition");
     await this.def.tick?.({
       app,
-      node: this
+      node: this,
+      dt
     });
     if (Object.keys(this.#changes).length > 0) {
       await this.def.update?.({
@@ -37927,8 +38164,12 @@ var LynxFlow = class {
   }
   async run(nodes) {
     console.log("Running nodes", nodes);
+    var last = performance.now();
     for (; ; ) {
-      const iter = await Promise.allSettled(nodes.map((node) => node.tick(this)));
+      const now = performance.now();
+      const dt = (now - last) / 1e3;
+      last = now;
+      const iter = await Promise.allSettled(nodes.map((node) => node.tick(this, dt)));
       for (var res of iter) {
         if (res.status === "rejected") {
           console.error(res.reason);

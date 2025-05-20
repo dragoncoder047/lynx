@@ -97,12 +97,13 @@ export class LynxNode<IPN extends string = any, OPN extends string = any, G exte
         else this.#changes[name] = (this.inputCurrentValues[name] as any[]).with(bi, value);
         console.log("updated change", name, this.#changes[name]);
     }
-    async tick(app: LynxFlow) {
+    async tick(app: LynxFlow, dt: number) {
         if (this.def === undefined)
             nodeComplain(this, "Node has no definition");
         await this.def.tick?.({
             app,
-            node: this
+            node: this,
+            dt
         });
         if (Object.keys(this.#changes).length > 0) {
             await this.def.update?.({

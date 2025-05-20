@@ -12,24 +12,20 @@ defNode({
     outputs: {
         clock: new Port("signal", undefined),
     },
-    stateKeys: ["elapsedTime", "lastTickTime"],
+    stateKeys: ["elapsedTime"],
     doc: "Updates connected nodes every N milliseconds.",
     setup({ node }) {
         node.state.elapsedTime = 0;
-        node.state.lastTickTime = 0;
     },
     update({ node, changes }) {
         if (changes.reset) {
             node.state.elapsedTime = 0;
         }
     },
-    tick({ node }) {
-        const now = performance.now();
-        const dt = now - node.state.lastTickTime;
+    tick({ node, dt }) {
         if (!node.get("paused")) {
-            node.state.elapsedTime += dt;
+            node.state.elapsedTime += dt * 1000;
         }
-        node.state.lastTickTime = now;
         // Max 1 update per tick because limitations
         if (node.state.elapsedTime >= node.get("interval")) {
             node.state.elapsedTime -= node.get("interval");

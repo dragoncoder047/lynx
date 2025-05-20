@@ -8,12 +8,16 @@ export const modulesReady = Promise.all([
     import("./flow_control"),
     import("./html"),
     import("./converters"),
-    import("./random"),
     import("./features/gps"),
     import("./features/unsafe"),
+    import("./math/arithmetic"),
+    import("./math/statistics"),
+    import("./math/random"),
+    import("./math/calculus"),
     import("./electronics/clock"),
     import("./electronics/logic"),
     import("./electronics/latches"),
+    import("./electronics/mux"),
 ]);
 
 export const NODES: NodeDef[] = [];

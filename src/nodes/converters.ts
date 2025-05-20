@@ -33,3 +33,19 @@ defNode({
         node.output("stringified", changes.what!.toString());
     }
 });
+
+defNode({
+    id: "string->boolean",
+    category: "Converters",
+    inputs: {
+        string: new Port("string", ""),
+    },
+    outputs: {
+        boolean: new Port("boolean", false),
+    },
+    doc: `Returns false if the string is the empty string or the string "false", and true otherwise.`,
+    update({ node, changes }) {
+        const str = changes.string!.toString();
+        node.output("boolean", str !== "" && str.toLowerCase() !== "false");
+    }
+});
