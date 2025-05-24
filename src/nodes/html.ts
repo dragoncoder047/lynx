@@ -111,7 +111,7 @@ defNode({
     outputs: {
         value: new Port("number", 0),
     },
-    doc: `Creates a HTML [\`<input type=number>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
+    doc: `Creates a HTML [\`<input type="number">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
     element. Outputs the current value.`,
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
@@ -157,7 +157,7 @@ defNode({
     outputs: {
         value: new Port("number", 0),
     },
-    doc: `Creates a HTML [\`<input type=range>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
+    doc: `Creates a HTML [\`<input type="range">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
     slider. Outputs the current value.`,
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
@@ -277,7 +277,7 @@ defNode({
     outputs: {
         value: new Port("string", ""),
     },
-    doc: `Creates a HTML [\`<input type=text>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
+    doc: `Creates a HTML [\`<input type="text">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
     element with a label. Outputs the current value.`,
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
@@ -314,7 +314,7 @@ defNode({
     outputs: {
         value: new Port("color", new Color(0, 0, 0)),
     },
-    doc: `Creates a HTML [\`<input type=color>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
+    doc: `Creates a HTML [\`<input type="color">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
     element with a label. Outputs the current color value.`,
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {
@@ -366,7 +366,7 @@ defNode({
     outputs: {
         value: new Port("boolean", false),
     },
-    doc: `Creates a HTML [\`<input type=checkbox>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
+    doc: `Creates a HTML [\`<input type="checkbox">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
     element with a label. Outputs the checked state as a boolean.`,
     stateKeys: ["el", "labelText"],
     setup({ app, node }) {

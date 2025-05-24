@@ -7,7 +7,7 @@ defNode({
     category: "Device",
     inputs: {},
     outputs: {
-        pos: new Port("point", Point.EMPTY),
+        pos: new Port("point", Point.NOWHERE),
         altitude: new Port("number", 0),
         heading: new Port("number", 0),
         speed: new Port("number", 0),

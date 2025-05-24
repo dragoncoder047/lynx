@@ -18,12 +18,14 @@ export const modulesReady = Promise.all([
     import("./math/statistics"),
     import("./math/random"),
     import("./math/calculus"),
-    import("./math/trig"),
+    import("./math/single_func"),
+    import("./math/double_func"),
     import("./math/geometry"),
-    import("./electronics/clock"),
+    import("./electronics/timing"),
     import("./electronics/logic"),
     import("./electronics/latches"),
     import("./electronics/mux"),
+    import("./electronics/filter"),
 ]);
 
 export const NODES: NodeDef[] = [];

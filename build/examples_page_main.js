@@ -13032,6 +13032,33 @@ var parse = compose(uniterate_async, _parse);
 var lips = { version, banner, date, exec, parse, tokenize, evaluate: _evaluate, compile, serialize, unserialize, box, unbox, serialize_bin, unserialize_bin, bootstrap, Environment, env: user_env, Worker, Interpreter, balanced_parenthesis: balanced, balancedParenthesis: balanced, balanced, Macro, Syntax, Pair, Values, QuotedPromise, Error: LipsError, quote, InputPort, OutputPort, BufferedOutputPort, InputFilePort, OutputFilePort, InputStringPort, OutputStringPort, InputByteVectorPort, OutputByteVectorPort, InputBinaryFilePort, OutputBinaryFilePort, set_fs, Formatter, Parser, Lexer, specials, repr, nil: _nil, eof, LSymbol, LNumber, LFloat, LComplex, LRational, LBigInteger, LCharacter, LString, Parameter, rationalize };
 global_env.set("lips", lips);
 
+// src/common/otherTypes.ts
+var Color = class {
+  r;
+  g;
+  b;
+  constructor(r, g, b) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+  }
+  toString() {
+    return `Color(${this.r}, ${this.g}, ${this.b})`;
+  }
+};
+var Point = class _Point {
+  x;
+  y;
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  toString() {
+    return `Point(${this.x}, ${this.y})`;
+  }
+  static NOWHERE = new _Point(NaN, NaN);
+};
+
 // src/lipsShim.ts
 await bootstrap("https://cdn.jsdelivr.net/npm/@jcubic/lips/dist/std.xcb");
 specials.__list__ = {};
@@ -13047,6 +13074,14 @@ var FixedParser = class extends Parser {
     return null;
   }
 };
+var setRepr = user_env.get("set-repr!");
+setRepr(Point, (point) => {
+  return `Point(${point.x}, ${point.y})`;
+});
+var bla = (x) => x.toString(16).padStart(2, "0");
+setRepr(Color, (color) => {
+  return `#${bla(color.r)}${bla(color.g)}${bla(color.b)}`;
+});
 
 // src/common/getMetadata.ts
 function getMeta(forms) {
@@ -13073,6 +13108,7 @@ function getMeta(forms) {
 
 // src/common/utils.ts
 var consToArray = user_env.get("list->array");
+var arrayToConsList = user_env.get("vector->list");
 async function parseWithMetadata(source) {
   const parser2 = new FixedParser({ env: user_env, meta: true });
   parser2.prepare(source);

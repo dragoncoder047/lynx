@@ -19,7 +19,7 @@ interface SetupArg<IPN extends string, OPN extends string, G extends Generic, SK
     readonly app: LynxFlow;
     readonly node: LynxNode<IPN, OPN, G, SK> & { def: NodeDef<IPN, OPN, G, SK> };
     readonly features: Record<string, Feature>;
-    readonly args: any;
+    readonly args: any[];
 }
 
 interface ConnectArg<IPN extends string, OPN extends string, G extends Generic, SK extends string> {
@@ -41,7 +41,7 @@ export interface NodeDef<IPN extends string = any, OPN extends string = any, G e
     readonly outputs: Record<OPN, Port<any>>;
     readonly argTypes?: TypeSpec[];
     readonly stateKeys?: SK[];
-    readonly handlesParams?: boolean;
+    readonly paramDoc?: string;
     readonly update?: (arg: UpdateArg<IPN, OPN, G, SK>) => (void | Promise<void>);
     readonly tick?: (arg: TickArg<IPN, OPN, G, SK>) => (void | Promise<void>);
     readonly setup?: (arg: SetupArg<IPN, OPN, G, SK>) => (void | Promise<void>);

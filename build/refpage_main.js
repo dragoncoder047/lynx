@@ -13003,27 +13003,71 @@ var init_lips_esm_min = __esm({
   }
 });
 
+// src/common/otherTypes.ts
+var Color, Point;
+var init_otherTypes = __esm({
+  "src/common/otherTypes.ts"() {
+    "use strict";
+    Color = class {
+      r;
+      g;
+      b;
+      constructor(r, g, b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+      }
+      toString() {
+        return `Color(${this.r}, ${this.g}, ${this.b})`;
+      }
+    };
+    Point = class _Point {
+      x;
+      y;
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+      toString() {
+        return `Point(${this.x}, ${this.y})`;
+      }
+      static NOWHERE = new _Point(NaN, NaN);
+    };
+  }
+});
+
 // src/lipsShim.ts
+var setRepr, bla;
 var init_lipsShim = __esm({
   async "src/lipsShim.ts"() {
     "use strict";
     init_lips_esm_min();
+    init_otherTypes();
     init_lips_esm_min();
     await bootstrap("https://cdn.jsdelivr.net/npm/@jcubic/lips/dist/std.xcb");
     specials.__list__ = {};
     LSymbol.list = new Proxy(LSymbol.list, {
       get: () => void 0
     });
+    setRepr = user_env.get("set-repr!");
+    setRepr(Point, (point) => {
+      return `Point(${point.x}, ${point.y})`;
+    });
+    bla = (x) => x.toString(16).padStart(2, "0");
+    setRepr(Color, (color) => {
+      return `#${bla(color.r)}${bla(color.g)}${bla(color.b)}`;
+    });
   }
 });
 
 // src/common/utils.ts
-var consToArray, repr2;
+var consToArray, arrayToConsList, repr2;
 var init_utils = __esm({
   async "src/common/utils.ts"() {
     "use strict";
     await init_lipsShim();
     consToArray = user_env.get("list->array");
+    arrayToConsList = user_env.get("vector->list");
     repr2 = (x) => user_env.get("format")("~s", x);
   }
 });
@@ -13119,39 +13163,6 @@ var init_flow_control = __esm({
         }
       }
     });
-  }
-});
-
-// src/common/otherTypes.ts
-var Color, Point;
-var init_otherTypes = __esm({
-  "src/common/otherTypes.ts"() {
-    "use strict";
-    Color = class {
-      r;
-      g;
-      b;
-      constructor(r, g, b) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-      }
-      toString() {
-        return `Color(${this.r}, ${this.g}, ${this.b})`;
-      }
-    };
-    Point = class _Point {
-      x;
-      y;
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-      }
-      toString() {
-        return `Point(${this.x}, ${this.y})`;
-      }
-      static EMPTY = new _Point(void 0, void 0);
-    };
   }
 });
 
@@ -13281,7 +13292,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: `Creates a HTML [\`<input type=number>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
+      doc: `Creates a HTML [\`<input type="number">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
     element. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
@@ -13326,7 +13337,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("number", 0)
       },
-      doc: `Creates a HTML [\`<input type=range>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
+      doc: `Creates a HTML [\`<input type="range">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
     slider. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
@@ -13443,7 +13454,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("string", "")
       },
-      doc: `Creates a HTML [\`<input type=text>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
+      doc: `Creates a HTML [\`<input type="text">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
     element with a label. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
@@ -13479,7 +13490,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("color", new Color(0, 0, 0))
       },
-      doc: `Creates a HTML [\`<input type=color>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
+      doc: `Creates a HTML [\`<input type="color">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
     element with a label. Outputs the current color value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
@@ -13515,7 +13526,7 @@ var init_html = __esm({
       outputs: {
         value: new Port("boolean", false)
       },
-      doc: `Creates a HTML [\`<input type=checkbox>\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
+      doc: `Creates a HTML [\`<input type="checkbox">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
     element with a label. Outputs the checked state as a boolean.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
@@ -13614,7 +13625,7 @@ var init_gps = __esm({
       category: "Device",
       inputs: {},
       outputs: {
-        pos: new Port("point", Point.EMPTY),
+        pos: new Port("point", Point.NOWHERE),
         altitude: new Port("number", 0),
         heading: new Port("number", 0),
         speed: new Port("number", 0)
@@ -13711,7 +13722,7 @@ var init_unsafe = __esm({
       outputs: {
         outputs: new Port("any", [], ["bus"])
       },
-      handlesParams: true,
+      paramDoc: "<lambda body>",
       features: ["unsafe-code"],
       doc: `Transforms the input and output values using a Scheme function.
 
@@ -13721,7 +13732,6 @@ var init_unsafe = __esm({
 
     If \`#<void>\` (JS \`undefined\`) is returned, the node will not update its outputs.`,
       async setup({ node, features, args }) {
-        const arrayToConsList = user_env.get("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a, d) => new Pair(a, d);
         const s = (n) => new LSymbol(n);
@@ -13736,7 +13746,6 @@ var init_unsafe = __esm({
         node.state.func = (await exec(code))[0];
       },
       async update({ node, app }) {
-        const arrayToConsList = user_env.get("vector->list");
         var value;
         try {
           value = await node.state.func(arrayToConsList(node.get("inputs")), node, app);
@@ -14016,7 +14025,7 @@ var init_arithmetic = __esm({
       }
     });
     defNode({
-      id: "difference",
+      id: "sub",
       category: "Math",
       template: { T: ["number"] },
       inputs: {
@@ -14047,7 +14056,7 @@ var init_arithmetic = __esm({
       }
     });
     defNode({
-      id: "quotient",
+      id: "div",
       category: "Math",
       template: { T: ["number"] },
       inputs: {
@@ -14063,7 +14072,7 @@ var init_arithmetic = __esm({
       }
     });
     defNode({
-      id: "modulus",
+      id: "mod",
       category: "Math",
       template: { T: ["number"] },
       inputs: {
@@ -14191,124 +14200,175 @@ var init_calculus = __esm({
   }
 });
 
-// src/nodes/math/trig.ts
-var trig_exports = {};
-var init_trig = __esm({
-  "src/nodes/math/trig.ts"() {
+// src/nodes/math/single_func.ts
+var single_func_exports = {};
+function degreesToRadians(degrees) {
+  return degrees * (Math.PI / 180);
+}
+function radiansToDegrees(radians) {
+  return radians * (180 / Math.PI);
+}
+var FUNCS;
+var init_single_func = __esm({
+  "src/nodes/math/single_func.ts"() {
     "use strict";
     init_nodeDef();
     init_all();
+    FUNCS = {
+      abs: { func: Math.abs, doc: "absolute value" },
+      acos: { func: Math.acos, doc: "inverse cosine" },
+      asin: { func: Math.asin, doc: "inverse sine" },
+      atan: { func: Math.atan, doc: "inverse tangent" },
+      ceil: { func: Math.ceil, doc: "round up" },
+      cos: { func: Math.cos, doc: "cosine" },
+      degrees: { func: radiansToDegrees, doc: "convert radians to degrees" },
+      exp: { func: Math.exp, doc: "exponential function" },
+      floor: { func: Math.floor, doc: "round down" },
+      log: { func: Math.log, doc: "natural logarithm" },
+      radians: { func: degreesToRadians, doc: "convert degrees to radians" },
+      round: { func: Math.round, doc: "round to nearest integer" },
+      sin: { func: Math.sin, doc: "sine" },
+      sqrt: { func: Math.sqrt, doc: "square root" },
+      tan: { func: Math.tan, doc: "tangent" },
+      trunc: { func: Math.trunc, doc: "round towards zero" }
+    };
     defNode({
-      id: "cos",
+      id: "mathfunc1",
+      category: "Math",
       inputs: {
-        angle: new Port("number", 0)
+        input: new Port("number", 0)
       },
       outputs: {
-        value: new Port("number", 0)
+        output: new Port("number", 0)
       },
-      update({ node }) {
-        const angle = node.get("angle");
-        node.output("value", Math.cos(angle));
+      paramDoc: "<func>",
+      doc: `Single-argument math functions.
+
+${Object.entries(FUNCS).map(([name, { doc: doc2 }]) => `* \`${name}\`: ${doc2}`).join("\n")}`,
+      stateKeys: ["func"],
+      setup({ node, args, app }) {
+        const func = FUNCS[args[0]];
+        if (!func) {
+          app.error(`Unknown function: ${args[0]}`);
+          return;
+        }
+        node.state.func = func.func;
       },
-      doc: `Outputs the cosine of the input angle measured in radians.`
+      update({ node, changes }) {
+        node.output("output", node.state.func(changes.input));
+      }
     });
+  }
+});
+
+// src/nodes/math/double_func.ts
+var double_func_exports = {};
+var MATH_FUNCS, COMPARE_FUNCS, BITWISE_FUNCS;
+var init_double_func = __esm({
+  "src/nodes/math/double_func.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    MATH_FUNCS = {
+      pow: { func: Math.pow, doc: "a raised to the power of b" },
+      atan2: { func: Math.atan2, doc: "arctangent of a/b, result in radians" },
+      max: { func: Math.max, doc: "larger of a and b" },
+      min: { func: Math.min, doc: "smaller of a and b" }
+    };
     defNode({
-      id: "sin",
+      id: "mathfunc2",
+      category: "Math",
       inputs: {
-        angle: new Port("number", 0)
+        a: new Port("number", 0),
+        b: new Port("number", 0)
       },
       outputs: {
-        value: new Port("number", 0)
+        result: new Port("number", 0)
       },
-      update({ node }) {
-        const angle = node.get("angle");
-        node.output("value", Math.sin(angle));
+      paramDoc: "<func>",
+      doc: `Two-argument math functions.
+
+${Object.entries(MATH_FUNCS).map(([name, { doc: doc2 }]) => `* \`${name}\`: ${doc2}`).join("\n")}`,
+      stateKeys: ["func"],
+      setup({ node, args, app }) {
+        const entry = MATH_FUNCS[args[0]];
+        if (!entry) {
+          app.error(`Unknown function: ${args[0]}`);
+          return;
+        }
+        node.state.func = entry.func;
       },
-      doc: `Outputs the sine of the input angle measured in radians.`
+      update({ node, changes }) {
+        node.output("result", node.state.func(Number(changes.a), Number(changes.b)));
+      }
     });
+    COMPARE_FUNCS = {
+      lt: { func: (a, b) => a < b, doc: "a < b" },
+      lte: { func: (a, b) => a <= b, doc: "a ≤ b" },
+      gt: { func: (a, b) => a > b, doc: "a > b" },
+      gte: { func: (a, b) => a >= b, doc: "a ≥ b" },
+      eq: { func: (a, b) => a === b, doc: "a === b (strict equality)" },
+      neq: { func: (a, b) => a !== b, doc: "a !== b (strict inequality)" }
+    };
     defNode({
-      id: "tan",
+      id: "compare",
+      category: "Math",
+      template: { T: ["number", "string"] },
       inputs: {
-        angle: new Port("number", 0)
+        a: new Port("T", 0),
+        b: new Port("T", 0)
       },
       outputs: {
-        value: new Port("number", 0)
+        result: new Port("boolean", false)
       },
-      update({ node }) {
-        const angle = node.get("angle");
-        node.output("value", Math.tan(angle));
+      paramDoc: "<func>",
+      doc: `Comparison functions for numbers and strings.
+
+${Object.entries(COMPARE_FUNCS).map(([name, { doc: doc2 }]) => `* \`${name}\`: ${doc2}`).join("\n")}`,
+      stateKeys: ["func"],
+      setup({ node, args, app }) {
+        const entry = COMPARE_FUNCS[args[0]];
+        if (!entry) {
+          app.error(`Unknown function: ${args[0]}`);
+          return;
+        }
+        node.state.func = entry.func;
       },
-      doc: `Outputs the tangent of the input angle measured in radians.`
+      update({ node, changes }) {
+        node.output("result", node.state.func(changes.a, changes.b));
+      }
     });
+    BITWISE_FUNCS = {
+      and: { func: (a, b) => a & b, doc: "bitwise AND" },
+      or: { func: (a, b) => a | b, doc: "bitwise OR" },
+      xor: { func: (a, b) => a ^ b, doc: "bitwise XOR" }
+    };
     defNode({
-      id: "acos",
+      id: "bitwise",
+      category: "Math",
       inputs: {
-        value: new Port("number", 0)
+        a: new Port("number", 0),
+        b: new Port("number", 0)
       },
       outputs: {
-        angle: new Port("number", 0)
+        result: new Port("number", 0)
       },
-      update({ node }) {
-        const value = node.get("value");
-        node.output("angle", Math.acos(value));
+      paramDoc: "<func>",
+      doc: `Bitwise functions for numbers.
+
+${Object.entries(BITWISE_FUNCS).map(([name, { doc: doc2 }]) => `* \`${name}\`: ${doc2}`).join("\n")}`,
+      stateKeys: ["func"],
+      setup({ node, args, app }) {
+        const entry = BITWISE_FUNCS[args[0]];
+        if (!entry) {
+          app.error(`Unknown function: ${args[0]}`);
+          return;
+        }
+        node.state.func = entry.func;
       },
-      doc: `Outputs the inverse cosine of the input value as an angle in radians or NaN if the value is outside the range [-1, 1].`
-    });
-    defNode({
-      id: "asin",
-      inputs: {
-        value: new Port("number", 0)
-      },
-      outputs: {
-        angle: new Port("number", 0)
-      },
-      update({ node }) {
-        const value = node.get("value");
-        node.output("angle", Math.asin(value));
-      },
-      doc: `Outputs the inverse sine of the input value as an angle in radians or NaN if the value is outside the range [-1, 1].`
-    });
-    defNode({
-      id: "atan",
-      inputs: {
-        value: new Port("number", 0)
-      },
-      outputs: {
-        angle: new Port("number", 0)
-      },
-      update({ node }) {
-        const value = node.get("value");
-        node.output("angle", Math.atan(value));
-      },
-      doc: `Outputs the inverse tangent of the input value as an angle in radians.`
-    });
-    defNode({
-      id: "radians->degrees",
-      inputs: {
-        radians: new Port("number", 0)
-      },
-      outputs: {
-        degrees: new Port("number", 0)
-      },
-      update({ node }) {
-        const radians = node.get("radians");
-        node.output("degrees", radians * (180 / Math.PI));
-      },
-      doc: `Converts radians to degrees.`
-    });
-    defNode({
-      id: "degrees->radians",
-      inputs: {
-        degrees: new Port("number", 0)
-      },
-      outputs: {
-        radians: new Port("number", 0)
-      },
-      update({ node }) {
-        const degrees = node.get("degrees");
-        node.output("radians", degrees * (Math.PI / 180));
-      },
-      doc: `Converts degrees to radians.`
+      update({ node, changes }) {
+        node.output("result", node.state.func(Number(changes.a), Number(changes.b)));
+      }
     });
   }
 });
@@ -14399,10 +14459,10 @@ var init_geometry = __esm({
   }
 });
 
-// src/nodes/electronics/clock.ts
-var clock_exports = {};
-var init_clock = __esm({
-  "src/nodes/electronics/clock.ts"() {
+// src/nodes/electronics/timing.ts
+var timing_exports = {};
+var init_timing = __esm({
+  "src/nodes/electronics/timing.ts"() {
     "use strict";
     init_nodeDef();
     init_all();
@@ -14435,6 +14495,25 @@ var init_clock = __esm({
           node.state.elapsedTime -= node.get("interval");
           node.output("clock");
         }
+      }
+    });
+    defNode({
+      category: "Timing",
+      id: "delay",
+      template: { T: ["any"] },
+      inputs: {
+        value: new Port("T", void 0),
+        delay: new Port("number", 1e3, ["silent"])
+      },
+      outputs: {
+        value: new Port("T", void 0)
+      },
+      doc: `Forwards the input value after a specified delay (in milliseconds)
+    using \`setTimeout\`.`,
+      update({ node, changes }) {
+        const value = changes.value;
+        const delay = node.get("delay") ?? 0;
+        setTimeout(() => node.output("value", value), delay);
       }
     });
   }
@@ -14758,6 +14837,67 @@ var init_mux = __esm({
   }
 });
 
+// src/nodes/electronics/filter.ts
+var filter_exports = {};
+var init_filter = __esm({
+  "src/nodes/electronics/filter.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "rc-lowpass",
+      category: "Math",
+      inputs: {
+        input: new Port("number", 0),
+        tau: new Port("number", 0.1)
+        // RC time constant
+      },
+      outputs: {
+        output: new Port("number", 0)
+      },
+      doc: `RC low-pass filter. Tau is the time it takes for the output to move
+    1-1/<em>e</em> = ~63.2% of the change after a step change in input.`,
+      tick({ node, dt }) {
+        const input = node.get("input");
+        const tau = node.get("tau");
+        let y = node.outputCurrentValues.output;
+        if (tau > 0) {
+          y += (input - y) * (dt / tau);
+        } else {
+          y = input;
+        }
+        node.output("output", y);
+      }
+    });
+    defNode({
+      id: "ramp-follower",
+      category: "Math",
+      inputs: {
+        input: new Port("number", 0),
+        rate: new Port("number", 1)
+        // max change per second
+      },
+      outputs: {
+        output: new Port("number", 0)
+      },
+      doc: `Ramp follower (slew rate limiter). Limits the rate of change of the output to ±rate per second.`,
+      tick({ node, dt }) {
+        const input = node.get("input");
+        const rate = node.get("rate");
+        let y = node.outputCurrentValues.output;
+        const maxDelta = Math.abs(rate) * dt;
+        const delta = input - y;
+        if (Math.abs(delta) > maxDelta) {
+          y += Math.sign(delta) * maxDelta;
+        } else {
+          y = input;
+        }
+        node.output("output", y);
+      }
+    });
+  }
+});
+
 // src/nodes/all.ts
 function defNode(node) {
   NODES.push(node);
@@ -14784,12 +14924,14 @@ var init_all = __esm({
       Promise.resolve().then(() => (init_statistics(), statistics_exports)),
       Promise.resolve().then(() => (init_random(), random_exports)),
       Promise.resolve().then(() => (init_calculus(), calculus_exports)),
-      Promise.resolve().then(() => (init_trig(), trig_exports)),
+      Promise.resolve().then(() => (init_single_func(), single_func_exports)),
+      Promise.resolve().then(() => (init_double_func(), double_func_exports)),
       Promise.resolve().then(() => (init_geometry(), geometry_exports)),
-      Promise.resolve().then(() => (init_clock(), clock_exports)),
+      Promise.resolve().then(() => (init_timing(), timing_exports)),
       Promise.resolve().then(() => (init_logic(), logic_exports)),
       Promise.resolve().then(() => (init_latches(), latches_exports)),
-      Promise.resolve().then(() => (init_mux(), mux_exports))
+      Promise.resolve().then(() => (init_mux(), mux_exports)),
+      Promise.resolve().then(() => (init_filter(), filter_exports))
     ]);
     NODES = [];
     FEATURES = [];
@@ -17006,7 +17148,7 @@ function docNode(def2, list2, fStore) {
       {},
       "(",
       def2.id,
-      ...Object.entries(def2.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : []),
+      ...def2.paramDoc ? [" ", def2.paramDoc] : Object.entries(def2.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : []),
       ")"
     )
   ));

@@ -18,7 +18,7 @@ defNode({
 });
 
 defNode({
-    id: "difference",
+    id: "sub",
     category: "Math",
     template: { T: ["number"] },
     inputs: {
@@ -51,7 +51,7 @@ defNode({
 });
 
 defNode({
-    id: "quotient",
+    id: "div",
     category: "Math",
     template: { T: ["number"] },
     inputs: {
@@ -68,7 +68,7 @@ defNode({
 });
 
 defNode({
-    id: "modulus",
+    id: "mod",
     category: "Math",
     template: { T: ["number"] },
     inputs: {

@@ -1,4 +1,5 @@
-import { bootstrap, specials, Parser, LSymbol } from "@jcubic/lips";
+import { bootstrap, specials, Parser, LSymbol, env } from "@jcubic/lips";
+import { Color, Point } from "./common/otherTypes";
 export * from "@jcubic/lips";
 
 
@@ -20,3 +21,12 @@ export class FixedParser extends Parser {
         return null;
     }
 }
+
+const setRepr = env.get<<T>(klass: { new(...x: any[]): T }, repr: (x: T, q: boolean) => string) => void>("set-repr!");
+setRepr(Point, (point: Point) => {
+    return `Point(${point.x}, ${point.y})`;
+});
+const bla = (x: number) => x.toString(16).padStart(2, "0");
+setRepr(Color, (color: Color) => {
+    return `#${bla(color.r)}${bla(color.g)}${bla(color.b)}`;
+});

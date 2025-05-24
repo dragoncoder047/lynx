@@ -33,3 +33,24 @@ defNode({
         }
     }
 });
+
+defNode({
+    category: "Timing",
+    id: "delay",
+    template: { T: ["any"] },
+    inputs: {
+        value: new Port("T", undefined),
+        delay: new Port("number", 1000, ["silent"]),
+    },
+    outputs: {
+        value: new Port("T", undefined),
+    },
+    doc: `Forwards the input value after a specified delay (in milliseconds)
+    using \`setTimeout\`.`,
+    update({ node, changes }) {
+        const value = changes.value;
+        const delay = node.get("delay") ?? 0;
+        setTimeout(() => node.output("value", value), delay);
+    }
+});
+

@@ -1,6 +1,7 @@
 import { env, FixedParser, LString, Pair, parse } from "../lipsShim";
 
 export const consToArray = env.get<(x: Pair) => any[]>("list->array");
+export const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
 export const repr = (x: any) => env.get<(fmt: string, ...args: any[]) => LString>("format")("~s", x);
 
 export function base64ToBytes(base64: string): Uint8Array {

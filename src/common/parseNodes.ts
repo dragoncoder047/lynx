@@ -220,8 +220,8 @@ function getParamImplicitNodes(writtenNodes: Superposition[]): { nodes: Superpos
     const links: ConnectionSpec[] = [];
     for (var s of writtenNodes) {
         // TODO: don't do this, only mark the implicit nodes
-        // and remove them if the handlesParams def doesn't get picked
-        if ([...s.concretes].some(c => c.def.handlesParams)) continue;
+        // and remove them if the paramDoc def doesn't get picked
+        if ([...s.concretes].some(c => c.def.paramDoc !== "")) continue;
         const res = implicit1(s);
         errors.push(...res.errors);
         nodes.push(...res.nodes);

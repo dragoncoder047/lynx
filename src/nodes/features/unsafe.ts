@@ -1,8 +1,8 @@
 import { make } from "vanilla";
 import { Feature } from "../../common/feature";
 import { Port } from "../../common/nodeDef";
-import { consToArray } from "../../common/utils";
-import { env, exec, LSymbol, nil, Pair } from "../../lipsShim";
+import { arrayToConsList, consToArray } from "../../common/utils";
+import { exec, LSymbol, nil, Pair } from "../../lipsShim";
 import { defFeature, defNode } from "../all";
 
 defFeature("unsafe-code", new Feature(async app => {
@@ -28,7 +28,7 @@ defNode({
     outputs: {
         outputs: new Port("any", [], ["bus"]),
     },
-    handlesParams: true,
+    paramDoc: "<lambda body>",
     features: ["unsafe-code"],
     doc: `Transforms the input and output values using a Scheme function.
 
@@ -38,7 +38,6 @@ defNode({
 
     If \`#<void>\` (JS \`undefined\`) is returned, the node will not update its outputs.`,
     async setup({ node, features, args }) {
-        const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         console.log(features["unsafe-code"]);
         const cons = (a: any, d: any) => new Pair(a, d);
         const s = (n: string) => new LSymbol(n);
@@ -51,7 +50,6 @@ defNode({
         node.state.func = (await exec(code))[0];
     },
     async update({ node, app }) {
-        const arrayToConsList = env.get<(x: any[]) => Pair>("vector->list");
         var value;
         try {
             value = await node.state.func(arrayToConsList(node.get("inputs")), node, app);

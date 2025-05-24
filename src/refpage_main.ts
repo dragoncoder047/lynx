@@ -52,7 +52,7 @@ function docNode(def: NodeDef, list: HTMLUListElement, fStore: Record<string, Se
     li.append(make("p", {},
         make("code", {},
             "(", def.id,
-            ...Object.entries(def.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : []),
+            ...(def.paramDoc ? [" ", def.paramDoc] : Object.entries(def.inputs).flatMap(([name, val]) => val.is("paramOnly") ? [` :${name} <${val.type}>`] : [])),
             ")")));
     if (def.features) {
         li.append(make("p", {},
