@@ -5,11 +5,15 @@ defNode({
     category: "Flow Control",
     id: "value",
     template: { T: ["any"] },
-    doc: `Emits the same value every time when it is updated
-    by the \`:trigger\` input.`,
+    doc: `Emits the input again when it is updated by the \`:trigger\`
+    input or when it changes. If you think in terms of digital logic
+    elements, this is a D flip-flop with caveats: when the \`:trigger\`
+    input updates it causes the output to send an update even if the value
+    it sends didn't change, and when the input \`:value\` changes it automatically
+    triggers an update even if \`:trigger\` didn't send an update.`,
     inputs: {
         trigger: new Port("signal", undefined),
-        value: new Port("T", undefined, ["silent"]),
+        value: new Port("T", undefined),
     },
     outputs: {
         value: new Port("T", undefined),

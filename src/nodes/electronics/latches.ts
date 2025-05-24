@@ -12,14 +12,14 @@ defNode({
     outputs: {
         q: new Port("T", undefined),
     },
-    stateKeys: ["q"],
-    doc: `D latch (transparent latch). When \`:enable\` is true, \`:q\` mirrors \`:d\`. When \`:enable\` is false, \`:q\` holds its value.`,
+    doc: `D latch (transparent latch). When \`:enable\` is true,
+    \`:q\` follows \`:d\`. When \`:enable\` is false, \`:q\` holds its value.`,
     update({ node }) {
         if (node.get("enable")) {
-            const oldQ = node.state.q;
-            node.state.q = node.get("d");
-            if (oldQ !== node.state.q)
-                node.output("q", node.state.q);
+            const newQ = node.get("d");
+            const oldQ = node.outputCurrentValues.q;
+            if (oldQ !== newQ)
+                node.output("q", newQ);
         }
     }
 });
@@ -35,10 +35,18 @@ defNode({
     outputs: {
         q: new Port("T", false),
     },
-    stateKeys: ["q"],
-    doc: `D flip-flop. When updated by \`:clock\`, \`:q\` is set to \`:d\`.`,
+    doc: `D flip-flop. When updated by \`:clock\`, \`:q\` is set to \`:d\` and triggers
+    an update if the value changed.
+
+    This is in contrast to the [\`value\`](#node-value) node which always triggers an
+    output update when its \`:trigger\` input updates even if the value did not change,
+    and also updates automatically (pass-through) when the value does change even if it
+    is not clocked by the \`trigger\`.`,
     update({ node }) {
-        node.output("q", node.get("d"));
+        const newQ = node.get("d");
+        const oldQ = node.outputCurrentValues.q;
+        if (oldQ !== newQ)
+            node.output("q", newQ);
     }
 });
 

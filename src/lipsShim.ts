@@ -4,16 +4,16 @@ export * from "@jcubic/lips";
 
 
 await bootstrap("https://cdn.jsdelivr.net/npm/@jcubic/lips/dist/std.xcb");
-/* disable parser specials */
+// disable parser specials
 specials.__list__ = {};
 
-/* disable symbol interning */
+// disable symbol interning
 LSymbol.list = new Proxy(LSymbol.list, {
     get: () => undefined,
 });
 
 export class FixedParser extends Parser {
-    /* disable datum references */
+    // disable datum references
     match_datum_label(token: string) {
         return null;
     }

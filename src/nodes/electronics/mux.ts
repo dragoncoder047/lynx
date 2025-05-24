@@ -2,7 +2,7 @@ import { Port } from "../../common/nodeDef";
 import { defNode } from "../all";
 
 defNode({
-    id: "demultiplexer",
+    id: "demux",
     category: "Flow Control",
     template: { T: ["any"] },
     inputs: {
@@ -19,7 +19,7 @@ defNode({
 });
 
 defNode({
-    id: "multiplexer",
+    id: "mux",
     category: "Flow Control",
     template: { T: ["any"] },
     inputs: {
