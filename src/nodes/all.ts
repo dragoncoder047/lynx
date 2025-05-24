@@ -12,6 +12,8 @@ export const modulesReady = Promise.all([
     import("./features/unsafe"),
     import("./features/gamepad"),
     import("./features/battery"),
+    import("./features/notification"),
+    import("./features/clipboard"),
     import("./math/arithmetic"),
     import("./math/statistics"),
     import("./math/random"),

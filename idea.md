@@ -70,7 +70,7 @@
     * [ ] 3D vector
     * [X] Color
     * [X] Trigger
-    * [ ] Node reference (special)
+    * ~~[ ] Node reference (special)~~
 * [X] S-expression savefile format
 * [X] "Bus" nodes that contain an array of data
 

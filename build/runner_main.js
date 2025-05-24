@@ -13942,6 +13942,86 @@ var init_battery = __esm({
   }
 });
 
+// src/nodes/features/notification.ts
+var notification_exports = {};
+var init_notification = __esm({
+  "src/nodes/features/notification.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "notification",
+      category: "Device",
+      inputs: {
+        title: new Port("string", "Notification"),
+        body: new Port("string", ""),
+        icon: new Port("string", ""),
+        trigger: new Port("signal", void 0)
+      },
+      outputs: {},
+      doc: `Sends a notification using the [Web Notification API](https://developer.mozilla.org/docs/Web/API/notification)
+    when :trigger is received.`,
+      update({ node, app: app2, changes }) {
+        if (changes.trigger) {
+          if (!("Notification" in window)) {
+            app2.error("Web Notification API not supported");
+            return;
+          }
+          if (Notification.permission === "granted") {
+            new Notification(node.get("title"), {
+              body: node.get("body"),
+              icon: node.get("icon") || void 0
+            });
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(() => node.send("trigger", void 0, void 0));
+          } else {
+            app2.error("Notification permission denied");
+          }
+        }
+      }
+    });
+  }
+});
+
+// src/nodes/features/clipboard.ts
+var clipboard_exports = {};
+var init_clipboard = __esm({
+  "src/nodes/features/clipboard.ts"() {
+    "use strict";
+    init_nodeDef();
+    init_all();
+    defNode({
+      id: "clipboard",
+      category: "Device",
+      inputs: {
+        writeText: new Port("string", "")
+      },
+      outputs: {
+        contents: new Port("string", "")
+      },
+      doc: `Reads from or writes to the clipboard using the [Clipboard API](https://developer.mozilla.org/docs/Web/API/Clipboard_API).`,
+      async update({ app: app2, changes }) {
+        if (!("clipboard" in navigator)) {
+          app2.error("Clipboard API not supported");
+          return;
+        }
+        await navigator.clipboard.writeText(changes.writeText);
+      },
+      async tick({ app: app2, node }) {
+        if (!("clipboard" in navigator)) {
+          app2.error("Clipboard API not supported");
+          return;
+        }
+        const text = await navigator.clipboard.readText();
+        if (text === node.outputCurrentValues.contents) {
+          return;
+        }
+        node.output("contents", text);
+      }
+    });
+  }
+});
+
 // src/nodes/math/arithmetic.ts
 var arithmetic_exports = {};
 var init_arithmetic = __esm({
@@ -14738,6 +14818,8 @@ var init_all = __esm({
       init_unsafe().then(() => unsafe_exports),
       Promise.resolve().then(() => (init_gamepad(), gamepad_exports)),
       Promise.resolve().then(() => (init_battery(), battery_exports)),
+      Promise.resolve().then(() => (init_notification(), notification_exports)),
+      Promise.resolve().then(() => (init_clipboard(), clipboard_exports)),
       Promise.resolve().then(() => (init_arithmetic(), arithmetic_exports)),
       Promise.resolve().then(() => (init_statistics(), statistics_exports)),
       Promise.resolve().then(() => (init_random(), random_exports)),
