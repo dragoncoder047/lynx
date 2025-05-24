@@ -3,9 +3,9 @@
 (define *category* "Math")
 
 ; Integrate a value over time and show the result
-(chain (range :label "Input Value" :min -1 :max 1 :step 0.01)
-    :value (integrate) :f (output :label "Integral: ∫x dt = "))
+(chain (range :label "Integrand Value" :min -1 :max 1 :step 0.01)
+    :value :df (integrate) :f (output :label "Integral: ∫x dt = "))
 
 ; Show the derivative of a changing value
-(chain (range :label "Input Value" :min -10 :max 10 :step 0.1)
-    :value (derivative) :df (output :label "Derivative: dx/dt = "))
+(chain (range :label "Changing Value" :min -10 :max 10 :step 0.1)
+    :value :f (derivative) :df (output :label "Derivative: dx/dt = "))

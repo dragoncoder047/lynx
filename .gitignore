@@ -1,1 +1,4 @@
 **/node_modules
+# prevent npm and yarn users from accidentally committing their lockfile
+package-lock.json
+yarn.lock

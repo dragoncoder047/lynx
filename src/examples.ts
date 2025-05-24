@@ -1,6 +1,7 @@
 import { LYNX_FILE_EXT, ONLINE_EXAMPLES_GH_ENDPOINT } from "./common/constants";
 import { getMeta, Metadata } from "./common/getMetadata";
 import { parseWithMetadata } from "./common/utils";
+import meta from "../examples/meta.json";
 
 export type Example = {
     filename: string;
@@ -51,3 +52,14 @@ for (var filename of files) {
     if (meta.hidden) continue;
     EXAMPLES.push({ filename, id, ...meta });
 }
+
+export const EXAMPLES_BY_CATEGORY = Object.groupBy(EXAMPLES, x => x.category);
+
+export const CATEGORY_ORDER = Object.keys(EXAMPLES_BY_CATEGORY).sort((a, b) => {
+    const aIdx = meta[a as keyof typeof meta]?.order;
+    const bIdx = meta[b as keyof typeof meta]?.order;
+    if (aIdx && bIdx) return aIdx - bIdx;
+    if (aIdx) return -1;
+    if (bIdx) return 1;
+    return a.localeCompare(b);
+});

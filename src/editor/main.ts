@@ -4,7 +4,7 @@ import { autoloadString } from "../common/autoload";
 import { compress } from "../common/compress";
 import { AUTOSAVE_KEY, LOCAL_SAVE_KEY } from "../common/constants";
 import { bytesToBase64 } from "../common/utils";
-import { EXAMPLES } from "../examples";
+import { CATEGORY_ORDER, EXAMPLES_BY_CATEGORY } from "../examples";
 import { lint } from "./lint";
 
 populateProjects();
@@ -123,9 +123,8 @@ function populateProjects() {
                         slot),
                 )));
     // do builtin examples
-    const gc = Object.groupBy(EXAMPLES, x => x.category);
-    for (var category of Object.keys(gc).sort()) {
-        const examples = gc[category]!;
+    for (const category of CATEGORY_ORDER) {
+        const examples = EXAMPLES_BY_CATEGORY[category]!;
         groups.push(
             make(
                 "optgroup",

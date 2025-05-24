@@ -103,6 +103,8 @@ defNode({
         // If value input changed, use it, else restore old value
         if ("value" in changes) {
             select.value = node.get("value");
+            node.output("selected", select.value);
+            node.output("index", select.selectedIndex);
         } else {
             select.value = oldValue;
         }
@@ -153,6 +155,7 @@ defNode({
         input.step = String(node.get("step"));
         if ("value" in changes) {
             input.value = String(node.get("value"));
+            node.output("value", Number(input.value));
         }
     }
 });
@@ -202,6 +205,7 @@ defNode({
         input.step = String(node.get("step"));
         if ("value" in changes) {
             input.value = String(node.get("value"));
+            node.output("value", Number(input.value));
         }
     }
 });
@@ -323,6 +327,7 @@ defNode({
         labelText.textContent = node.get("label");
         if ("value" in changes) {
             input.value = node.get("value");
+            node.output("value", input.value);
         }
     }
 });
@@ -362,6 +367,7 @@ defNode({
         labelText.textContent = node.get("label");
         if ("value" in changes) {
             input.value = rgbToHex(node.get("value"));
+            node.output("value", node.get("value"));
         }
     }
 });
@@ -415,7 +421,8 @@ defNode({
         const labelText = node.state.labelText as HTMLSpanElement;
         labelText.textContent = node.get("label");
         if ("checked" in changes) {
-            input.checked = !!node.get("checked");
+            input.checked = node.get("checked");
+            node.output("value", input.checked);
         }
     }
 });
@@ -461,9 +468,13 @@ defNode({
         mine.classList.add("lynx-layout");
         app.addUI(mine);
         node.state.myEl = mine;
+        node.output("el", mine);
+        // force a refresh to start
+        node.send("refresh", undefined, 0);
     },
     update({ node, changes }) {
         if (changes.refresh) {
+            console.log("refreshing layout");
             const newEls = node.get("elements") as HTMLElement[];
             const containers = node.state.containers as HTMLElement[];
             for (var [a, b] of zip(containers, newEls)) {

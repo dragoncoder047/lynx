@@ -40,7 +40,7 @@ defNode({
     template: { T: ["any"] },
     inputs: {
         value: new Port("T", undefined),
-        delay: new Port("number", 1000, ["silent"]),
+        ms: new Port("number", 1000, ["silent"]),
     },
     outputs: {
         value: new Port("T", undefined),
@@ -49,7 +49,7 @@ defNode({
     using \`setTimeout\`.`,
     update({ node, changes }) {
         const value = changes.value;
-        const delay = (node.get("delay") ?? 0).valueOf();
+        const delay = (node.get("ms") ?? 0).valueOf();
         console.log("Delaying value ", value, "by", delay, "ms");
         setTimeout(() => node.output("value", value), delay);
     }

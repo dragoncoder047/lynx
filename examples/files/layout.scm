@@ -10,13 +10,7 @@
 (define slider (range :label "The value" :min 0 :max 100))
 (define out (meter :label "The value again" :min 0 :max 100))
 (chain slider :value :value out)
-(chain btn :clicked (value :value 50) :value slider)
-
-; recursive layout!!
-(chain flex-button :el ::0 (layout (flex column 0 1 2 3))
-    ~ table-button :el ::1 @layout
-    ~ table-layout :el ::2 @layout
-    ~ flex-layout :el ::3 @layout)
+(chain btn :clicked (value :d 50) :value slider)
 
 (define table-layout
     (layout
@@ -38,8 +32,15 @@
 (chain flex-button :clicked :refresh flex-layout)
 (chain table-button :clicked :refresh table-layout)
 
-(define which (sr-latch))
-(chain flex-button :clicked (pulse) :s which)
-(chain table-button :clicked (pulse) :r which)
-(chain which :q :hide table-layout)
-(chain which :q (not) :hide flex-layout)
+(define which-shown (sr-latch))
+(chain flex-button :clicked ::0 (merge-signals) (pulse) :s which-shown
+    ~ (on-start) ::1 @merge-signals)
+(chain table-button :clicked (pulse) :r which-shown)
+(chain which-shown :q :hide table-layout)
+(chain which-shown :q (not) :hide flex-layout)
+
+; recursive layout!!
+(chain flex-button :el ::0 (layout (flex column 0 1 2 3))
+    ~ table-button :el ::1 @layout
+    ~ table-layout :el ::2 @layout
+    ~ flex-layout :el ::3 @layout)

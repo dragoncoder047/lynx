@@ -12,3 +12,15 @@ defNode({
     }
 });
 
+defNode({
+    category: "Basic",
+    id: "on-start",
+    doc: "Outputs a single update when the flow is started and then never again.",
+    inputs: {},
+    outputs: {
+        update: new Port("signal", undefined),
+    },
+    setup({ node }) {
+        node.output("update");
+    }
+});

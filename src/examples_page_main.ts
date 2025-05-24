@@ -1,25 +1,12 @@
 import { get, html, make } from "vanilla";
-import { EXAMPLES } from "./examples";
 import meta from "../examples/meta.json";
+import { CATEGORY_ORDER, EXAMPLES_BY_CATEGORY } from "./examples";
 import { markdownToHTML } from "./markedShim";
 
 const exDiv = get("#examples-container")!;
 
-const grouped = Object.groupBy(EXAMPLES, x => x.category);
-
-// Get all category names, with meta.json order first, then the rest alphabetically
-
-const allCategories = Object.keys(grouped).sort((a, b) => {
-    const aIdx = meta[a as keyof typeof meta]?.order;
-    const bIdx = meta[b as keyof typeof meta]?.order;
-    if (aIdx && bIdx) return aIdx - bIdx;
-    if (aIdx) return -1;
-    if (bIdx) return 1;
-    return a.localeCompare(b);
-});
-
-for (const category of allCategories) {
-    const exs = grouped[category] || [];
+for (const category of CATEGORY_ORDER) {
+    const exs = EXAMPLES_BY_CATEGORY[category] || [];
     if (!exs.length) continue;
     const catMeta = meta[category as keyof typeof meta];
     exDiv.append(

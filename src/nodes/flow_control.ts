@@ -9,17 +9,17 @@ defNode({
     input or when it changes. If you think in terms of digital logic
     elements, this is a D flip-flop with caveats: when the \`:trigger\`
     input updates it causes the output to send an update even if the value
-    it sends didn't change, and when the input \`:value\` changes it automatically
+    it sends didn't change, and when the input \`:d\` changes it automatically
     triggers an update even if \`:trigger\` didn't send an update.`,
     inputs: {
         trigger: new Port("signal", undefined),
-        value: new Port("T", undefined),
+        d: new Port("T", undefined),
     },
     outputs: {
         value: new Port("T", undefined),
     },
     update({ node }) {
-        node.output("value", node.get("value"));
+        node.output("value", node.get("d"));
     }
 });
 

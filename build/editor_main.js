@@ -35711,7 +35711,7 @@ var init_lipsShim = __esm({
       get: () => void 0
     });
     FixedParser = class extends Parser {
-      /* disable datum references */
+      // disable datum references
       match_datum_label(token) {
         return null;
       }
@@ -35864,6 +35864,18 @@ var init_basic = __esm({
         app.log(node.get("values").join(" "));
       }
     });
+    defNode({
+      category: "Basic",
+      id: "on-start",
+      doc: "Outputs a single update when the flow is started and then never again.",
+      inputs: {},
+      outputs: {
+        update: new Port("signal", void 0)
+      },
+      setup({ node }) {
+        node.output("update");
+      }
+    });
   }
 });
 
@@ -35878,17 +35890,21 @@ var init_flow_control = __esm({
       category: "Flow Control",
       id: "value",
       template: { T: ["any"] },
-      doc: `Emits the same value every time when it is updated
-    by the \`:trigger\` input.`,
+      doc: `Emits the input again when it is updated by the \`:trigger\`
+    input or when it changes. If you think in terms of digital logic
+    elements, this is a D flip-flop with caveats: when the \`:trigger\`
+    input updates it causes the output to send an update even if the value
+    it sends didn't change, and when the input \`:d\` changes it automatically
+    triggers an update even if \`:trigger\` didn't send an update.`,
       inputs: {
         trigger: new Port("signal", void 0),
-        value: new Port("T", void 0, ["silent"])
+        d: new Port("T", void 0)
       },
       outputs: {
         value: new Port("T", void 0)
       },
       update({ node }) {
-        node.output("value", node.get("value"));
+        node.output("value", node.get("d"));
       }
     });
     defNode({
@@ -36080,6 +36096,8 @@ var init_html = __esm({
         });
         if ("value" in changes) {
           select.value = node.get("value");
+          node.output("selected", select.value);
+          node.output("index", select.selectedIndex);
         } else {
           select.value = oldValue;
         }
@@ -36129,6 +36147,7 @@ var init_html = __esm({
         input.step = String(node.get("step"));
         if ("value" in changes) {
           input.value = String(node.get("value"));
+          node.output("value", Number(input.value));
         }
       }
     });
@@ -36177,6 +36196,7 @@ var init_html = __esm({
         input.step = String(node.get("step"));
         if ("value" in changes) {
           input.value = String(node.get("value"));
+          node.output("value", Number(input.value));
         }
       }
     });
@@ -36295,6 +36315,7 @@ var init_html = __esm({
         labelText.textContent = node.get("label");
         if ("value" in changes) {
           input.value = node.get("value");
+          node.output("value", input.value);
         }
       }
     });
@@ -36333,6 +36354,7 @@ var init_html = __esm({
         labelText.textContent = node.get("label");
         if ("value" in changes) {
           input.value = rgbToHex(node.get("value"));
+          node.output("value", node.get("value"));
         }
       }
     });
@@ -36370,7 +36392,8 @@ var init_html = __esm({
         const labelText = node.state.labelText;
         labelText.textContent = node.get("label");
         if ("checked" in changes) {
-          input.checked = !!node.get("checked");
+          input.checked = node.get("checked");
+          node.output("value", input.checked);
         }
       }
     });
@@ -36415,9 +36438,12 @@ var init_html = __esm({
         mine.classList.add("lynx-layout");
         app.addUI(mine);
         node.state.myEl = mine;
+        node.output("el", mine);
+        node.send("refresh", void 0, 0);
       },
       update({ node, changes }) {
         if (changes.refresh) {
+          console.log("refreshing layout");
           const newEls = node.get("elements");
           const containers = node.state.containers;
           for (var [a, b] of zip(containers, newEls)) {
@@ -37044,14 +37070,18 @@ var init_calculus = __esm({
       id: "integrate",
       category: "Calculus",
       inputs: {
-        df: new Port("number", 0)
+        df: new Port("number", 0),
+        min: new Port("number", -Infinity),
+        max: new Port("number", Infinity)
       },
       outputs: {
         f: new Port("number", 0)
       },
-      doc: `Calculates the time integral of the input value.`,
+      doc: `Calculates the time integral of the input value. The optional min and max inputs
+    will clamp the integrand and prevent it from growing without bound which would be useful in
+    a PID controller setup.`,
       tick({ node, dt }) {
-        node.output("f", node.get("df") * dt + node.outputCurrentValues.f);
+        node.output("f", Math.min(node.get("max"), Math.max(node.get("min"), node.get("df") * dt + node.outputCurrentValues.f)));
       }
     });
     defNode({
@@ -37063,15 +37093,15 @@ var init_calculus = __esm({
       outputs: {
         df: new Port("number", 0)
       },
-      stateKeys: ["old_df"],
+      stateKeys: ["old_f"],
       doc: `Calculates the time derivative of the input value.`,
       setup({ node }) {
-        node.state.old_df = 0;
+        node.state.old_f = 0;
       },
       tick({ node, dt }) {
         const f = node.get("f");
-        node.output("df", (f - node.state.old_df) / dt);
-        node.state.old_df = f;
+        node.output("df", (f - node.state.old_f) / dt);
+        node.state.old_f = f;
       }
     });
   }
@@ -37380,7 +37410,7 @@ var init_timing = __esm({
       template: { T: ["any"] },
       inputs: {
         value: new Port("T", void 0),
-        delay: new Port("number", 1e3, ["silent"])
+        ms: new Port("number", 1e3, ["silent"])
       },
       outputs: {
         value: new Port("T", void 0)
@@ -37389,7 +37419,7 @@ var init_timing = __esm({
     using \`setTimeout\`.`,
       update({ node, changes }) {
         const value = changes.value;
-        const delay = (node.get("delay") ?? 0).valueOf();
+        const delay = (node.get("ms") ?? 0).valueOf();
         console.log("Delaying value ", value, "by", delay, "ms");
         setTimeout(() => node.output("value", value), delay);
       }
@@ -37648,14 +37678,14 @@ var init_latches = __esm({
       outputs: {
         q: new Port("T", void 0)
       },
-      stateKeys: ["q"],
-      doc: `D latch (transparent latch). When \`:enable\` is true, \`:q\` mirrors \`:d\`. When \`:enable\` is false, \`:q\` holds its value.`,
+      doc: `D latch (transparent latch). When \`:enable\` is true,
+    \`:q\` follows \`:d\`. When \`:enable\` is false, \`:q\` holds its value.`,
       update({ node }) {
         if (node.get("enable")) {
-          const oldQ = node.state.q;
-          node.state.q = node.get("d");
-          if (oldQ !== node.state.q)
-            node.output("q", node.state.q);
+          const newQ = node.get("d");
+          const oldQ = node.outputCurrentValues.q;
+          if (oldQ !== newQ)
+            node.output("q", newQ);
         }
       }
     });
@@ -37670,10 +37700,18 @@ var init_latches = __esm({
       outputs: {
         q: new Port("T", false)
       },
-      stateKeys: ["q"],
-      doc: `D flip-flop. When updated by \`:clock\`, \`:q\` is set to \`:d\`.`,
+      doc: `D flip-flop. When updated by \`:clock\`, \`:q\` is set to \`:d\` and triggers
+    an update if the value changed.
+
+    This is in contrast to the [\`value\`](#node-value) node which always triggers an
+    output update when its \`:trigger\` input updates even if the value did not change,
+    and also updates automatically (pass-through) when the value does change even if it
+    is not clocked by the \`trigger\`.`,
       update({ node }) {
-        node.output("q", node.get("d"));
+        const newQ = node.get("d");
+        const oldQ = node.outputCurrentValues.q;
+        if (oldQ !== newQ)
+          node.output("q", newQ);
       }
     });
     defNode({
@@ -37737,7 +37775,7 @@ var init_mux = __esm({
     init_nodeDef();
     init_all();
     defNode({
-      id: "demultiplexer",
+      id: "demux",
       category: "Flow Control",
       template: { T: ["any"] },
       inputs: {
@@ -37753,7 +37791,7 @@ var init_mux = __esm({
       }
     });
     defNode({
-      id: "multiplexer",
+      id: "mux",
       category: "Flow Control",
       template: { T: ["any"] },
       inputs: {
@@ -38051,6 +38089,24 @@ function getMeta(forms) {
 
 // src/examples.ts
 await init_utils();
+
+// examples/meta.json
+var meta_default = {
+  Basic: {
+    order: 1,
+    description: "Basic examples to get started."
+  },
+  Advanced: {
+    order: 2,
+    description: "Advanced examples require a bit more programming knowledge compared to other examples."
+  },
+  UI: {
+    order: 3,
+    description: "How to create HTML based user interfaces using Lynx."
+  }
+};
+
+// src/examples.ts
 var EXAMPLES = [];
 async function fetchFromGithub() {
   const response = await fetch(ONLINE_EXAMPLES_GH_ENDPOINT).then((response2) => response2.json());
@@ -38079,6 +38135,15 @@ for (filename of files) {
   EXAMPLES.push({ filename, id, ...meta });
 }
 var filename;
+var EXAMPLES_BY_CATEGORY = Object.groupBy(EXAMPLES, (x) => x.category);
+var CATEGORY_ORDER = Object.keys(EXAMPLES_BY_CATEGORY).sort((a, b) => {
+  const aIdx = meta_default[a]?.order;
+  const bIdx = meta_default[b]?.order;
+  if (aIdx && bIdx) return aIdx - bIdx;
+  if (aIdx) return -1;
+  if (bIdx) return 1;
+  return a.localeCompare(b);
+});
 
 // src/editor/lint.ts
 var ace2 = __toESM(require_ace(), 1);
@@ -39292,9 +39357,8 @@ function populateProjects() {
         )
       )
     );
-  const gc = Object.groupBy(EXAMPLES, (x) => x.category);
-  for (var category of Object.keys(gc).sort()) {
-    const examples = gc[category];
+  for (const category of CATEGORY_ORDER) {
+    const examples = EXAMPLES_BY_CATEGORY[category];
     groups.push(
       make(
         "optgroup",

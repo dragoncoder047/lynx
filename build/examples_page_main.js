@@ -19,6 +19,22 @@ function get(id) {
   return document.querySelector(id);
 }
 
+// examples/meta.json
+var meta_default = {
+  Basic: {
+    order: 1,
+    description: "Basic examples to get started."
+  },
+  Advanced: {
+    order: 2,
+    description: "Advanced examples require a bit more programming knowledge compared to other examples."
+  },
+  UI: {
+    order: 3,
+    description: "How to create HTML based user interfaces using Lynx."
+  }
+};
+
 // src/common/constants.ts
 var LYNX_FILE_EXT = ".scm";
 var METADATA_NAME_RE = /^\*([a-z-_+]+)\*$/i;
@@ -13066,7 +13082,7 @@ LSymbol.list = new Proxy(LSymbol.list, {
   get: () => void 0
 });
 var FixedParser = class extends Parser {
-  /* disable datum references */
+  // disable datum references
   match_datum_label(token) {
     return null;
   }
@@ -13144,22 +13160,15 @@ for (filename of files) {
   EXAMPLES.push({ filename, id, ...meta });
 }
 var filename;
-
-// examples/meta.json
-var meta_default = {
-  Basic: {
-    order: 1,
-    description: "Basic examples to get started."
-  },
-  Advanced: {
-    order: 2,
-    description: "Advanced examples require a bit more programming knowledge compared to other examples."
-  },
-  UI: {
-    order: 3,
-    description: "How to create HTML based user interfaces using Lynx."
-  }
-};
+var EXAMPLES_BY_CATEGORY = Object.groupBy(EXAMPLES, (x) => x.category);
+var CATEGORY_ORDER = Object.keys(EXAMPLES_BY_CATEGORY).sort((a, b) => {
+  const aIdx = meta_default[a]?.order;
+  const bIdx = meta_default[b]?.order;
+  if (aIdx && bIdx) return aIdx - bIdx;
+  if (aIdx) return -1;
+  if (bIdx) return 1;
+  return a.localeCompare(b);
+});
 
 // node_modules/.pnpm/marked@15.0.11/node_modules/marked/lib/marked.esm.js
 function _getDefaults() {
@@ -15309,17 +15318,8 @@ function markdownToHTML(markdown) {
 
 // src/examples_page_main.ts
 var exDiv = get("#examples-container");
-var grouped = Object.groupBy(EXAMPLES, (x) => x.category);
-var allCategories = Object.keys(grouped).sort((a, b) => {
-  const aIdx = meta_default[a]?.order;
-  const bIdx = meta_default[b]?.order;
-  if (aIdx && bIdx) return aIdx - bIdx;
-  if (aIdx) return -1;
-  if (bIdx) return 1;
-  return a.localeCompare(b);
-});
-for (const category of allCategories) {
-  const exs = grouped[category] || [];
+for (const category of CATEGORY_ORDER) {
+  const exs = EXAMPLES_BY_CATEGORY[category] || [];
   if (!exs.length) continue;
   const catMeta = meta_default[category];
   exDiv.append(

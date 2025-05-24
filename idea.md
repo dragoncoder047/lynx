@@ -53,8 +53,7 @@
             * [ ] Translate
             * [ ] getUserMedia
     * [X] Gamepads
-    * [ ] Notifications
-    * [ ] Vibration
+    * [X] Notifications
     * [ ] Text-to-speech
     * [ ] Speech recognition
     * [ ] WebRTC/Presentation API for remote controller on phone??
@@ -76,6 +75,7 @@
 
 ## Need to
 
+* [ ] Make examples loader work with nested directories
 * [X] Define savefile format
     * [X] Create a node `(type args)`
     * [X] Name a node `(define name (xxx))`
@@ -90,7 +90,7 @@
 * [X] unify generics and template mess into type params objects
     * [X] Make inputs' static values be in initializer params NOT anything specific
 * [X] TYPESCRIPT
-* [ ] Write documentation
+* [X] Write documentation
 * [X] Do linter in Ace
     * [X] Display error squiggles
     * [ ] Hover tooltips for nodes

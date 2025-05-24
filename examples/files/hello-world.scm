@@ -18,7 +18,7 @@
        ; Select a trigger for when the button is clicked.
        :clicked
        ; When the trigger fires, send the value "World!"...
-       (value :value "World!")
+       (value :d "World!")
        ; ...and log it with the prefix "Hello,".
        ::1 (log ::0 "Hello,"))
        ; Things to try:
@@ -26,4 +26,3 @@
        ; * Change the ::1 to ::22 -- where is the extra space coming from?
        ; * Change both to ::0 -- why does this not work?
        ; * Change the :clicked to :pressed -- why does this not work?
-       ; * Change the :rising to :falling -- what happens when you hold the button down?
