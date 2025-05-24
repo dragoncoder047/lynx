@@ -1,4 +1,4 @@
-(define *title* "Geolocation Test")
+(define *title* "Geolocation")
 (define *description*
   "A test of the [`geolocation`](../docs/reference#feat-geolocation) feature.
    Logs your geolocation data every time it updates.")

@@ -49,10 +49,11 @@ export class LynxFlow {
             const now = performance.now();
             const dt = (now - last) / 1000;
             last = now;
-            const iter = await Promise.allSettled(nodes.map(node => node.tick(this, dt)));
-            for (var res of iter) {
-                if (res.status === "rejected") {
-                    console.error(res.reason);
+            for (var node of nodes) {
+                try {
+                    await node.tick(this, dt);
+                } catch (e) {
+                    console.error(e);
                 }
             }
             // to prevent a total lockup

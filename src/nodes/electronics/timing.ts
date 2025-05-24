@@ -49,8 +49,27 @@ defNode({
     using \`setTimeout\`.`,
     update({ node, changes }) {
         const value = changes.value;
-        const delay = node.get("delay") ?? 0;
+        const delay = (node.get("delay") ?? 0).valueOf();
+        console.log("Delaying value ", value, "by", delay, "ms");
         setTimeout(() => node.output("value", value), delay);
     }
 });
 
+defNode({
+    id: "pulse",
+    inputs: {
+        edge: new Port("signal", undefined),
+    },
+    outputs: {
+        pulse: new Port("boolean", false),
+    },
+    doc: `When updated, sets output to true for one tick and then sets it back to false.`,
+    tick({ node }) {
+        if (node.outputCurrentValues.pulse)
+            node.output("pulse", false);
+    },
+    update({ node }) {
+        // update runs after tick yay
+        node.output("pulse", true);
+    }
+})

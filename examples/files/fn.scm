@@ -7,8 +7,7 @@
    number between 1 and 100 and logs it. Except, instead of using math, log, and random nodes,
    it uses one function node to generate the random number, do the math, and log it.")
 
-(chain (button "Randomize") :pressed
-       (edges) :rising ::0
+(chain (button "Randomize") :clicked ::0
        (fn
           (let* ((mul 100)
                  (num (1+ (floor (* (random) mul)))))

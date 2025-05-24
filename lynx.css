@@ -146,12 +146,6 @@ body.fullpage {
     }
 }
 
-#app {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
 /* loading thingy */
 
 .connect:empty {
@@ -195,4 +189,19 @@ td {
 
 :not(a, h1, h2, h3, h4, h5, h6)>code {
     color: lightgreen;
+}
+
+/* layout stuff */
+
+#app :has(> :only-child) {
+    padding: 0.5em;
+}
+
+#app:is(.button, .label) {
+    padding: .25em;
+    margin: .25em;
+}
+
+#app>.lynx-ui {
+    display: block;
 }

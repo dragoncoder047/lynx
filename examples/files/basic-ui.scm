@@ -1,6 +1,6 @@
-(define *title* "All UI Nodes Doing Absolutely Nothing")
-(define *description* "Demonstrates the HTML UI nodes: select, number-input, range, output, meter, text-input.")
-(define *category* "Basic")
+(define *title* "Basic HTML UI Nodes")
+(define *description* "Demonstrates HTML UI nodes: select, number-input, range, output, meter, text-input.")
+(define *category* "UI")
 
 (chain (select :options:0 "Apple" :options:1 "Banana" :options:2 "Orange" :label "Pick a fruit: ")
         :selected :value (output :label "Selected Fruit: "))
@@ -9,4 +9,4 @@
 (chain (range :label "Adjust value:" :min 0 :max 100 :step 5)
         :value (meter :label "Meter" :min 0 :max 100 :optimum 100))
 (chain (text-input :label "Type something: ")
-        :value (output :label "You typed: "))
+        :value :value (output :label "You typed: "))

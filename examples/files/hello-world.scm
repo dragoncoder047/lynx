@@ -15,8 +15,8 @@
 (chain
        ; Create a button with the text "Click me!".
        (button "Click me!")
-       ; Create a trigger for when the button is pressed.
-       :pressed (edges) :rising
+       ; Select a trigger for when the button is clicked.
+       :clicked
        ; When the trigger fires, send the value "World!"...
        (value :value "World!")
        ; ...and log it with the prefix "Hello,".
@@ -25,6 +25,5 @@
        ; * Switch the ::1 and ::0 above -- does that change the output?
        ; * Change the ::1 to ::22 -- where is the extra space coming from?
        ; * Change both to ::0 -- why does this not work?
-       ; * Change the :pressed to :released -- why does this not work?
+       ; * Change the :clicked to :pressed -- why does this not work?
        ; * Change the :rising to :falling -- what happens when you hold the button down?
-       ; * Change the :pressed to :hovering -- what happens now?

@@ -65,6 +65,23 @@ defNode({
 
 defNode({
     category: "Logic",
+    id: "merge-signals",
+    inputs: {
+        inputs: new Port("signal", [], ["bus"]),
+    },
+    outputs: {
+        output: new Port("signal", undefined),
+    },
+    doc: `Merges multiple signal inputs into a single output.
+    When any input updates, the output will trigger an update.`,
+    update({ node }) {
+        console.log("merge-signals input changed");
+        node.output("output");
+    }
+});
+
+defNode({
+    category: "Logic",
     id: "some",
     inputs: {
         inputs: new Port("boolean", [], ["bus"]),

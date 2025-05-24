@@ -22,7 +22,7 @@ export class FixedParser extends Parser {
     }
 }
 
-const setRepr = env.get<<T>(klass: { new(...x: any[]): T }, repr: (x: T, q: boolean) => string) => void>("set-repr!");
+const setRepr = env.get<<T>(klass: abstract new (...args: any[]) => T, repr: (x: T, q: boolean) => string) => void>("set-repr!");
 setRepr(Point, (point: Point) => {
     return `Point(${point.x}, ${point.y})`;
 });

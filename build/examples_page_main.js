@@ -13154,6 +13154,10 @@ var meta_default = {
   Advanced: {
     order: 2,
     description: "Advanced examples require a bit more programming knowledge compared to other examples."
+  },
+  UI: {
+    order: 3,
+    description: "How to create HTML based user interfaces using Lynx."
   }
 };
 

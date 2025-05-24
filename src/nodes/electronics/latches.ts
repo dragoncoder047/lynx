@@ -43,6 +43,34 @@ defNode({
 });
 
 defNode({
+    id: "sr-latch",
+    category: "Logic",
+    inputs: {
+        s: new Port("boolean", false),
+        r: new Port("boolean", false),
+        enable: new Port("boolean", true),
+    },
+    outputs: {
+        q: new Port("boolean", false),
+    },
+    doc: `Set-reset latch. When \`:enable\` is true,
+    \`:q\` is set if \`:s\` is true or cleared if \`:r\` is true.
+    If both are true at the same time, \`:s\` takes precedence.
+    If \`:enable\` is false, \`:q\` holds its value.`,
+    update({ node }) {
+        if (node.get("enable")) {
+            var value = node.outputCurrentValues.q;
+            if (node.get("s")) {
+                value = true;
+            } else if (node.get("r")) {
+                value = false;
+            }
+            node.output("q", value);
+        }
+    }
+});
+
+defNode({
     category: "Logic",
     id: "jk-flipflop",
     inputs: {

@@ -35750,6 +35750,15 @@ async function parseWithMetadata(source) {
 function isEmbedded() {
   return window.self !== window.top;
 }
+function zip(...arrays) {
+  const length = Math.min(...arrays.map((arr) => arr.length));
+  const result = [];
+  for (let i = 0; i < length; i++) {
+    const tuple = arrays.map((arr) => arr[i]);
+    result.push(tuple);
+  }
+  return result;
+}
 var consToArray, arrayToConsList, repr2;
 var init_utils = __esm({
   async "src/common/utils.ts"() {
@@ -35778,6 +35787,62 @@ var init_nodeDef = __esm({
       is(pf) {
         return this.flags.includes(pf);
       }
+    };
+  }
+});
+
+// src/common/types.ts
+function typeOf(obj) {
+  if (obj === void 0 || obj === null) return "signal";
+  if (typeof obj !== "object") return typeof obj;
+  for (const [type2, constructor] of Object.entries(CONSTRUCTORS)) {
+    if (obj instanceof constructor) {
+      return type2;
+    }
+  }
+  return "unknown";
+}
+function fixTypeOf(obj) {
+  const color_regex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
+  if (typeof obj === "string") {
+    const res = color_regex.exec(obj);
+    if (res) {
+      const [, r, g, b] = res;
+      return { fixedVal: new Color(parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)), realType: "color" };
+    }
+  }
+  return { fixedVal: obj, realType: typeOf(obj) };
+}
+function getGroundTypes(type2) {
+  if (type2 === "any") return ["number", "bigint", "string", "symbol", "boolean", "color", "point", "html-element", "audio", "signal"];
+  if (type2 === "number") return ["number", "bigint", "boolean"];
+  return [type2];
+}
+function canConnect(output, input) {
+  if (input === "any") return true;
+  else if (Array.isArray(input)) {
+    if (Array.isArray(output)) return output.every((t2) => input.includes(t2));
+    else return input.includes(output);
+  } else if (Array.isArray(output)) return false;
+  if (input === "number" && output === "bigint") return true;
+  return output === input;
+}
+var CONSTRUCTORS;
+var init_types = __esm({
+  async "src/common/types.ts"() {
+    "use strict";
+    await init_lipsShim();
+    init_otherTypes();
+    CONSTRUCTORS = {
+      bigint: LBigInteger,
+      number: LNumber,
+      string: LString,
+      symbol: LSymbol,
+      boolean: Boolean,
+      color: Color,
+      point: Point,
+      audio: AudioNode,
+      "html-element": HTMLElement
     };
   }
 });
@@ -35870,13 +35935,57 @@ function rgbToHex(color) {
   const b = color.b.toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 }
+function processUI(containers, args) {
+  if (args instanceof LString) {
+    return make("span", {}, args.toString());
+  }
+  if (args instanceof LNumber) {
+    const val = args.valueOf();
+    return containers[val] = make("span.lynx-container");
+  }
+  if (args instanceof Pair) {
+    const layout_type = args.car.toString();
+    const children = consToArray(args.cdr);
+    var root2;
+    switch (layout_type) {
+      case "flex":
+        root2 = make("div");
+        root2.style.display = "flex";
+        root2.style.flexDirection = children[0].toString();
+        root2.style.flexWrap = "wrap";
+        root2.append(...children.slice(1).map((child) => processUI(containers, child)));
+        break;
+      case "table":
+        root2 = make("table");
+        root2.style.borderCollapse = "collapse";
+        root2.style.tableLayout = "auto";
+        root2.append(...children.map((child) => {
+          const row = make("tr");
+          consToArray(child).forEach((cell) => {
+            const cellEl = make("td");
+            cellEl.append(processUI(containers, cell));
+            row.append(cellEl);
+          });
+          return row;
+        }));
+        break;
+      default:
+        throw new Error(`Unknown layout type ${layout_type}`);
+    }
+    return root2;
+  }
+  throw new Error(`${typeOf(args)} not valid here`);
+}
 var init_html = __esm({
-  "src/nodes/html.ts"() {
+  async "src/nodes/html.ts"() {
     "use strict";
     init_vanilla();
     init_nodeDef();
-    init_all();
     init_otherTypes();
+    await init_types();
+    await init_utils();
+    await init_lipsShim();
+    init_all();
     defNode({
       category: "User Interface",
       id: "button",
@@ -35885,14 +35994,16 @@ var init_html = __esm({
       },
       outputs: {
         pressed: new Port("boolean", false),
-        hovering: new Port("boolean", false)
+        hovering: new Port("boolean", false),
+        clicked: new Port("signal", void 0),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<button>\`](https://developer.mozilla.org/docs/Web/HTML/Element/button)
     element with the given text and outputs \`:pressed\` and \`:hovering\` states when the user
     interacts with it.`,
       stateKeys: ["el"],
       setup({ app, node }) {
-        const button = make("button", {}, node.get("text"));
+        const button = make("button.lynx-ui", {}, node.get("text"));
         app.addUI(button);
         node.state.el = button;
         button.addEventListener("pointerdown", () => {
@@ -35901,14 +36012,18 @@ var init_html = __esm({
         button.addEventListener("pointerup", () => {
           node.output("pressed", false);
         });
-        button.addEventListener("mouseover", () => {
+        button.addEventListener("pointerenter", () => {
           node.output("hovering", true);
         });
-        button.addEventListener("mouseout", () => {
+        button.addEventListener("pointerleave", () => {
           node.output("hovering", false);
+        });
+        button.addEventListener("click", () => {
+          node.output("clicked");
         });
         node.output("hovering", false);
         node.output("pressed", false);
+        node.output("el", button);
       },
       update({ node }) {
         node.state.el.textContent = node.get("text");
@@ -35924,13 +36039,14 @@ var init_html = __esm({
       },
       outputs: {
         selected: new Port("string", ""),
-        index: new Port("number", 0)
+        index: new Port("number", 0),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<select>\`](https://developer.mozilla.org/docs/Web/HTML/Element/select)
     dropdown. Takes an array of options and outputs the selected value and index.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const select = make("select");
         labelEl.append(labelText, select);
@@ -35950,6 +36066,7 @@ var init_html = __esm({
         });
         node.output("selected", select.value);
         node.output("index", select.selectedIndex);
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const select = node.state.el;
@@ -35979,13 +36096,14 @@ var init_html = __esm({
         label: new Port("string", "Number")
       },
       outputs: {
-        value: new Port("number", 0)
+        value: new Port("number", 0),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<input type="number">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/number)
     element. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "number" });
         labelEl.append(labelText, input);
@@ -36000,6 +36118,7 @@ var init_html = __esm({
           node.output("value", Number(input.value));
         });
         node.output("value", Number(input.value));
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const input = node.state.el;
@@ -36024,13 +36143,14 @@ var init_html = __esm({
         label: new Port("string", "Range")
       },
       outputs: {
-        value: new Port("number", 0)
+        value: new Port("number", 0),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<input type="range">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/range)
     slider. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const input = make("input", { type: "range" });
@@ -36046,6 +36166,7 @@ var init_html = __esm({
           node.output("value", Number(input.value));
         });
         node.output("value", Number(input.value));
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const input = node.state.el;
@@ -36066,12 +36187,14 @@ var init_html = __esm({
         value: new Port("any", ""),
         label: new Port("string", "Output")
       },
-      outputs: {},
+      outputs: {
+        el: new Port("html-element", void 0)
+      },
       doc: `Creates a HTML [\`<output>\`](https://developer.mozilla.org/docs/Web/HTML/Element/output)
     element to display a value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const output = make("output");
         labelEl.append(labelText, output);
@@ -36079,6 +36202,7 @@ var init_html = __esm({
         node.state.el = output;
         node.state.labelText = labelText;
         output.textContent = node.get("value");
+        node.output("el", labelEl);
       },
       update({ node }) {
         const output = node.state.el;
@@ -36099,12 +36223,14 @@ var init_html = __esm({
         optimum: new Port("number", 50),
         label: new Port("string", "Meter")
       },
-      outputs: {},
+      outputs: {
+        el: new Port("html-element", void 0)
+      },
       doc: `Creates a HTML [\`<meter>\`](https://developer.mozilla.org/docs/Web/HTML/Element/meter)
     element to display a numeric measurement.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         labelEl.append(labelText);
         const meter = make("meter");
@@ -36118,6 +36244,7 @@ var init_html = __esm({
         meter.high = node.get("high");
         meter.optimum = node.get("optimum");
         meter.value = node.get("value");
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const meter = node.state.el;
@@ -36141,13 +36268,14 @@ var init_html = __esm({
         value: new Port("string", "")
       },
       outputs: {
-        value: new Port("string", "")
+        value: new Port("string", ""),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<input type="text">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/text)
     element with a label. Outputs the current value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "text" });
         labelEl.append(labelText, input);
@@ -36159,6 +36287,7 @@ var init_html = __esm({
           node.output("value", input.value);
         });
         node.output("value", input.value);
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const input = node.state.el;
@@ -36177,13 +36306,14 @@ var init_html = __esm({
         value: new Port("color", new Color(0, 0, 0))
       },
       outputs: {
-        value: new Port("color", new Color(0, 0, 0))
+        value: new Port("color", new Color(0, 0, 0)),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<input type="color">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/color)
     element with a label. Outputs the current color value.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "color" });
         labelEl.append(labelText, input);
@@ -36195,6 +36325,7 @@ var init_html = __esm({
           node.output("value", new Color(...hexToRgb(input.value)));
         });
         node.output("value", new Color(...hexToRgb(input.value)));
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const input = node.state.el;
@@ -36213,13 +36344,14 @@ var init_html = __esm({
         checked: new Port("boolean", false)
       },
       outputs: {
-        value: new Port("boolean", false)
+        value: new Port("boolean", false),
+        el: new Port("html-element", void 0)
       },
       doc: `Creates a HTML [\`<input type="checkbox">\`](https://developer.mozilla.org/docs/Web/HTML/Element/input/checkbox)
     element with a label. Outputs the checked state as a boolean.`,
       stateKeys: ["el", "labelText"],
       setup({ app, node }) {
-        const labelEl = make("label");
+        const labelEl = make("label.lynx-ui");
         const labelText = make("span", {}, node.get("label"));
         const input = make("input", { type: "checkbox" });
         labelEl.append(labelText, input);
@@ -36231,6 +36363,7 @@ var init_html = __esm({
           node.output("value", input.checked);
         });
         node.output("value", input.checked);
+        node.output("el", labelEl);
       },
       update({ node, changes }) {
         const input = node.state.el;
@@ -36239,6 +36372,61 @@ var init_html = __esm({
         if ("checked" in changes) {
           input.checked = !!node.get("checked");
         }
+      }
+    });
+    defNode({
+      category: "User Interface",
+      id: "layout",
+      paramDoc: "<layout>",
+      inputs: {
+        elements: new Port("html-element", [], ["bus", "silent"]),
+        refresh: new Port("signal", void 0),
+        hide: new Port("boolean", false)
+      },
+      outputs: {
+        el: new Port("html-element", void 0)
+      },
+      doc: `Creates a layout container for multiple HTML elements.
+
+    Layout description:
+
+    * \`(flex <direction> <elements> ...)\` - flexbox layout with the given direction (row, column,
+        row-reverse, etc).
+    * \`(table (<cell> ...) ...)\` - table layout with a list of rows, each containing a list of cells.
+    * \`<string>\` - creates a span with the given text.
+
+        If you want to change the text, use a number and point it to an [\`<output>\`](#node-output)
+        node.
+    * \`<number>\` - will be filled with the corresponding element from the input list.
+
+    Anything else is invalid.
+
+    NOTE: There is no way to change the layout after it has been created, other than replacing
+    individual elements.
+
+    NOTE 2: A single node can only be put in one layout at a time. If you try to put it in
+    multiple layouts, it will be removed from the previous one. This is a limitation of the
+    underlying HTML DOM API. However you can move the node back and forth by updating the
+    \`:refresh\` input.`,
+      stateKeys: ["myEl", "containers"],
+      setup({ app, args, node }) {
+        node.state.containers = [];
+        const mine = processUI(node.state.containers, args[0]);
+        mine.classList.add("lynx-layout");
+        app.addUI(mine);
+        node.state.myEl = mine;
+      },
+      update({ node, changes }) {
+        if (changes.refresh) {
+          const newEls = node.get("elements");
+          const containers = node.state.containers;
+          for (var [a, b] of zip(containers, newEls)) {
+            a.childNodes.forEach((child) => child.remove());
+            a.append(b);
+          }
+        }
+        if ("hide" in changes)
+          node.state.myEl.style.display = changes.hide ? "none" : "block";
       }
     });
   }
@@ -37201,8 +37389,26 @@ var init_timing = __esm({
     using \`setTimeout\`.`,
       update({ node, changes }) {
         const value = changes.value;
-        const delay = node.get("delay") ?? 0;
+        const delay = (node.get("delay") ?? 0).valueOf();
+        console.log("Delaying value ", value, "by", delay, "ms");
         setTimeout(() => node.output("value", value), delay);
+      }
+    });
+    defNode({
+      id: "pulse",
+      inputs: {
+        edge: new Port("signal", void 0)
+      },
+      outputs: {
+        pulse: new Port("boolean", false)
+      },
+      doc: `When updated, sets output to true for one tick and then sets it back to false.`,
+      tick({ node }) {
+        if (node.outputCurrentValues.pulse)
+          node.output("pulse", false);
+      },
+      update({ node }) {
+        node.output("pulse", true);
       }
     });
   }
@@ -37271,6 +37477,22 @@ var init_logic = __esm({
       doc: "Outputs false if both inputs are false and true otherwise.",
       update({ node, changes }) {
         node.output("output", !!(changes.a || changes.b));
+      }
+    });
+    defNode({
+      category: "Logic",
+      id: "merge-signals",
+      inputs: {
+        inputs: new Port("signal", [], ["bus"])
+      },
+      outputs: {
+        output: new Port("signal", void 0)
+      },
+      doc: `Merges multiple signal inputs into a single output.
+    When any input updates, the output will trigger an update.`,
+      update({ node }) {
+        console.log("merge-signals input changed");
+        node.output("output");
       }
     });
     defNode({
@@ -37455,6 +37677,33 @@ var init_latches = __esm({
       }
     });
     defNode({
+      id: "sr-latch",
+      category: "Logic",
+      inputs: {
+        s: new Port("boolean", false),
+        r: new Port("boolean", false),
+        enable: new Port("boolean", true)
+      },
+      outputs: {
+        q: new Port("boolean", false)
+      },
+      doc: `Set-reset latch. When \`:enable\` is true,
+    \`:q\` is set if \`:s\` is true or cleared if \`:r\` is true.
+    If both are true at the same time, \`:s\` takes precedence.
+    If \`:enable\` is false, \`:q\` holds its value.`,
+      update({ node }) {
+        if (node.get("enable")) {
+          var value = node.outputCurrentValues.q;
+          if (node.get("s")) {
+            value = true;
+          } else if (node.get("r")) {
+            value = false;
+          }
+          node.output("q", value);
+        }
+      }
+    });
+    defNode({
       category: "Logic",
       id: "jk-flipflop",
       inputs: {
@@ -37612,7 +37861,7 @@ var init_all = __esm({
     modulesReady = Promise.all([
       Promise.resolve().then(() => (init_basic(), basic_exports)),
       Promise.resolve().then(() => (init_flow_control(), flow_control_exports)),
-      Promise.resolve().then(() => (init_html(), html_exports)),
+      init_html().then(() => html_exports),
       Promise.resolve().then(() => (init_converters(), converters_exports)),
       Promise.resolve().then(() => (init_gps(), gps_exports)),
       init_unsafe().then(() => unsafe_exports),
@@ -38029,47 +38278,7 @@ function nodeComplain(node, msg, severity = 1) {
 
 // src/common/parseNodes.ts
 init_nodeDef();
-
-// src/common/types.ts
-await init_lipsShim();
-init_otherTypes();
-function typeOf(obj) {
-  if (obj === void 0 || obj === null) return "signal";
-  if (typeof obj !== "object") return typeof obj;
-  if (obj instanceof AudioNode) return "audio";
-  if (obj instanceof Color) return "color";
-  if (obj instanceof Point) return "point";
-  if (obj instanceof LNumber) return "number";
-  if (obj instanceof LString) return "string";
-  if (obj instanceof LSymbol) return "symbol";
-  return "unknown";
-}
-function fixTypeOf(obj) {
-  const color_regex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
-  if (typeof obj === "string") {
-    const res = color_regex.exec(obj);
-    if (res) {
-      const [, r, g, b] = res;
-      return { fixedVal: new Color(parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)), realType: "color" };
-    }
-  }
-  return { fixedVal: obj, realType: typeOf(obj) };
-}
-function getGroundTypes(type2) {
-  if (type2 === "any") return ["number", "bigint", "string", "symbol", "boolean", "color", "point"];
-  if (type2 === "number") return ["number", "bigint", "boolean"];
-  return [type2];
-}
-function canConnect(output, input) {
-  if (input === "any") return true;
-  else if (Array.isArray(input)) {
-    if (Array.isArray(output)) return output.every((t2) => input.includes(t2));
-    else return input.includes(output);
-  } else if (Array.isArray(output)) return false;
-  return output === input;
-}
-
-// src/common/parseNodes.ts
+await init_types();
 await init_utils();
 var NodeAsWritten = class {
   name;
@@ -38178,18 +38387,18 @@ function makeNode(value) {
 }
 var SPECIALS = /* @__PURE__ */ new Map([
   // port ref symbol (the general case)
-  [/^:/, (_m, el, _out, zip, _errors) => {
-    zip.push(new PortRef(el));
+  [/^:/, (_m, el, _out, zip2, _errors) => {
+    zip2.push(new PortRef(el));
   }],
   // stop linking
-  [/^~$/, (_m, _el, out, zip, _errors) => {
-    out.push(zip.slice());
-    zip.length = 0;
+  [/^~$/, (_m, _el, out, zip2, _errors) => {
+    out.push(zip2.slice());
+    zip2.length = 0;
   }],
   // backreference
-  [/^@/, (_m, el, out, zip, errors) => {
+  [/^@/, (_m, el, out, zip2, errors) => {
     const reffed = el.valueOf().slice(1);
-    const prevNodes = out.flat(1).concat(zip);
+    const prevNodes = out.flat(1).concat(zip2);
     const n = prevNodes.findLast((x) => x instanceof NodeAsWritten && x.name.valueOf() === reffed);
     if (n === void 0)
       errors.push(makePosError(
@@ -38197,7 +38406,7 @@ var SPECIALS = /* @__PURE__ */ new Map([
         el,
         LynxError.UNDEFINED_NAME
       ));
-    else zip.push(n);
+    else zip2.push(n);
   }]
 ]);
 function processSpecialsAndPortrefs(elements) {
@@ -38248,7 +38457,7 @@ function getParamImplicitNodes(writtenNodes) {
   const nodes = [];
   const links = [];
   for (var s of writtenNodes) {
-    if ([...s.concretes].some((c) => c.def.paramDoc !== "")) continue;
+    if ([...s.concretes].some((c) => c.def.paramDoc)) continue;
     const res = implicit1(s);
     errors.push(...res.errors);
     nodes.push(...res.nodes);
@@ -38316,7 +38525,7 @@ function createImplicitSuperposition(a, sym, value, type2) {
         id: `__implicit_arg_${name}__`,
         inputs: {},
         outputs: {
-          value: new Port(type2, value, ["silent"])
+          value: new Port(type2, value)
         },
         doc: `Implicit node created by init arg :${name}`
       }
@@ -38873,10 +39082,11 @@ var LynxFlow = class {
       const now = performance.now();
       const dt = (now - last) / 1e3;
       last = now;
-      const iter = await Promise.allSettled(nodes.map((node) => node.tick(this, dt)));
-      for (var res of iter) {
-        if (res.status === "rejected") {
-          console.error(res.reason);
+      for (var node of nodes) {
+        try {
+          await node.tick(this, dt);
+        } catch (e75) {
+          console.error(e75);
         }
       }
       await new Promise((r) => setTimeout(r, 0));

@@ -221,7 +221,7 @@ function getParamImplicitNodes(writtenNodes: Superposition[]): { nodes: Superpos
     for (var s of writtenNodes) {
         // TODO: don't do this, only mark the implicit nodes
         // and remove them if the paramDoc def doesn't get picked
-        if ([...s.concretes].some(c => c.def.paramDoc !== "")) continue;
+        if ([...s.concretes].some(c => c.def.paramDoc)) continue;
         const res = implicit1(s);
         errors.push(...res.errors);
         nodes.push(...res.nodes);
@@ -288,7 +288,7 @@ function createImplicitSuperposition(a: NodeAsWritten, sym: LSymbol, value: any,
                 id: `__implicit_arg_${name}__`,
                 inputs: {},
                 outputs: {
-                    value: new Port(type, value, ["silent"])
+                    value: new Port(type, value)
                 },
                 doc: `Implicit node created by init arg :${name}`,
             }

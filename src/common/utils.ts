@@ -40,3 +40,13 @@ export async function parseWithMetadata(source: string): Promise<Pair[]> {
 export function isEmbedded(): boolean {
     return window.self !== window.top;
 }
+
+export function zip<T extends readonly unknown[][]>(...arrays: T): { [K in keyof T]: T[K] extends (infer U)[] ? U : never }[] {
+    const length = Math.min(...arrays.map(arr => arr.length));
+    const result: any[] = [];
+    for (let i = 0; i < length; i++) {
+        const tuple = arrays.map(arr => arr[i]) as { [K in keyof T]: T[K] extends (infer U)[] ? U : never };
+        result.push(tuple);
+    }
+    return result;
+}
