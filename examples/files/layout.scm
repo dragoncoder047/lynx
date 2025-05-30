@@ -1,6 +1,5 @@
 (define *title* "Layout")
 (define *description* "Demonstrates the use of creating HTML layouts using different layout types.")
-(define *author* "dragoncoder047")
 (define *category* "UI")
 
 (define flex-button (button "Use flex-box layout"))

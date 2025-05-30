@@ -5,14 +5,14 @@ defNode({
     id: "notification",
     category: "Device",
     inputs: {
-        title: new Port("string", "Notification"),
+        title: new Port("string", "Lynx Notification"),
         body: new Port("string", ""),
         icon: new Port("string", ""),
         trigger: new Port("signal", undefined),
     },
     outputs: {},
     doc: `Sends a notification using the [Web Notification API](https://developer.mozilla.org/docs/Web/API/notification)
-    when :trigger is received.`,
+    when \`:trigger\` is received.`,
     update({ node, app, changes }) {
         if (changes.trigger) {
             if (!("Notification" in window)) {
@@ -22,6 +22,7 @@ defNode({
             if (Notification.permission === "granted") {
                 // having the invocation of the constructor actually do the sending is strange
                 // i would expect a .send() method but whatever
+                console.log("sending notification");
                 new Notification(node.get("title"), {
                     body: node.get("body"),
                     icon: node.get("icon") || undefined,

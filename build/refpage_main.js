@@ -14000,6 +14000,7 @@ var init_gamepad = __esm({
     The buttons and axes outputs are arrays of button and axis values which can be used to access buttons and axes
     when the gamepad is a non-standard layout.`,
       async tick({ node, dt }) {
+        const dtMillis = 1e3 * Math.max(dt, 5);
         const gamepad = navigator.getGamepads()[node.get("index")];
         node.output("connected", !!gamepad);
         if (!gamepad) return;
@@ -14028,7 +14029,7 @@ var init_gamepad = __esm({
               motor.playEffect("dual-rumble", {
                 strongMagnitude: node.get("rumble-left"),
                 weakMagnitude: node.get("rumble-right"),
-                duration: dt
+                duration: dtMillis
               });
             } catch (e75) {
             }
@@ -14038,7 +14039,7 @@ var init_gamepad = __esm({
               motor.playEffect("trigger-rumble", {
                 leftTrigger: node.get("rumble-lt"),
                 rightTrigger: node.get("rumble-rt"),
-                duration: dt
+                duration: dtMillis
               });
             } catch (e75) {
             }
@@ -14122,14 +14123,14 @@ var init_notification = __esm({
       id: "notification",
       category: "Device",
       inputs: {
-        title: new Port("string", "Notification"),
+        title: new Port("string", "Lynx Notification"),
         body: new Port("string", ""),
         icon: new Port("string", ""),
         trigger: new Port("signal", void 0)
       },
       outputs: {},
       doc: `Sends a notification using the [Web Notification API](https://developer.mozilla.org/docs/Web/API/notification)
-    when :trigger is received.`,
+    when \`:trigger\` is received.`,
       update({ node, app, changes }) {
         if (changes.trigger) {
           if (!("Notification" in window)) {
@@ -14137,6 +14138,7 @@ var init_notification = __esm({
             return;
           }
           if (Notification.permission === "granted") {
+            console.log("sending notification");
             new Notification(node.get("title"), {
               body: node.get("body"),
               icon: node.get("icon") || void 0

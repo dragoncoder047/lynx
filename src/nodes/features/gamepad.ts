@@ -42,6 +42,7 @@ defNode({
     The buttons and axes outputs are arrays of button and axis values which can be used to access buttons and axes
     when the gamepad is a non-standard layout.`,
     async tick({ node, dt }) {
+        const dtMillis = 1000 * Math.max(dt, 5);
         const gamepad = navigator.getGamepads()[node.get("index")];
         node.output("connected", !!gamepad);
         if (!gamepad) return;
@@ -73,7 +74,7 @@ defNode({
                     motor.playEffect("dual-rumble", {
                         strongMagnitude: node.get("rumble-left"),
                         weakMagnitude: node.get("rumble-right"),
-                        duration: dt
+                        duration: dtMillis
                     });
                 } catch (e) { }
             }),
@@ -82,7 +83,7 @@ defNode({
                     motor.playEffect("trigger-rumble", {
                         leftTrigger: node.get("rumble-lt"),
                         rightTrigger: node.get("rumble-rt"),
-                        duration: dt
+                        duration: dtMillis
                     });
                 } catch (e) { }
             }),

@@ -238,6 +238,7 @@ function implicit1(s: Superposition): { nodes: Superposition[], links: Connectio
     const links: ConnectionSpec[] = [];
     if (s.asWritten.args.length === 1) {
         // only one arg, so there must be one input or one param-only input
+        // or one with the right type (TODO: this part not implemented)
         // infer which one it is
         const allInputs = [...s.concretes].map(c => Object.entries(c.def.inputs));
         const matchingInputs = allInputs.flatMap(inputs => {
