@@ -75,15 +75,16 @@
 
 ## Need to
 
-* [ ] Make examples loader work with nested directories
+* [ ] Fix bug where output port not existing error gets suppressed in some cases
+* [ ] Make examples finder/loader work with nested directories
 * [X] Define savefile format
     * [X] Create a node `(type args)`
     * [X] Name a node `(define name (xxx))`
-    * [ ] Create a higher order node `(define (name . args))`
+    * [ ] Create a subgraph template `(define (name . args))`
     * [X] Reference a named node `name`
     * [X] Select an output `:name`
     * [X] Select an input `:name`
-    * [X] Go back in the chain N nodes: `@nodeTo`
+    * [X] Go back in the chain: `@nodeTo`
     * [X] Partition groups `~`
     * [X] Reference Nth of bus port: number
 * [X] nodes that instantiate based on connections

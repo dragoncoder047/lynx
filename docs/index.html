@@ -97,8 +97,8 @@
             (chain (foo) :a (bar) @foo :b :c (baz))
             ```
 
-            This will connect foo's "a" output to bar or foo to bar's "a" input (depending on the types of the ports),
-            then bar back into the same foo node, then foo's "b" output into baz's "c" input.
+            This will connect `foo`'s `:a` output to `bar` or `foo` to `bar`'s `:a` input (depending on the types of the
+            ports), then `bar` back into the same `foo` node, then `foo`'s `:b` output into `baz`'s `:c` input.
 
             ### Blocking a connection
 
@@ -110,7 +110,7 @@
             (chain (foo) :a (bar) ~ @foo :b (baz))
             ```
 
-            This will connect foo to bar, and the same foo to baz, but won't connect bar back into foo.
+            This will connect `foo` to `bar`, and the same `foo` to `baz`, but won't connect `bar` back into `foo`.
 
             ### Bussed ports
 
@@ -122,15 +122,37 @@
             (chain (foo-bus) :xx:1 :yy (bar))
             ```
 
-            This will connect index 1 of foo-bus's :xx output into the :yy input of bar.
+            This will connect index 1 of `foo-bus`'s `:xx` output into the `:yy` input of `bar`.
 
             If you try to connect a bussed port to a non-bussed port, without specifying a number, Lynx will yell at
             you. If both the input and output are buses, you must specify both ports with numbers (to connect only one
             line) or neither (to connect all lines at once).
 
-            <!-- ## Custom Nodes and Features
+            ## Changing default values of inputs
 
-            TODO: implement and write this -->
+            Many nodes have inputs that control their function, but don't really need to be changed that often if at
+            all. If you don't intend to change it, but don't like the default, you can specify the value by writing the
+            name of the input (including colon) followed by a value, after the node type in parenthesis. Lynx will infer
+            the type of the value you gave, and will create an implicit "virtual" constant node and connect it to the
+            named input:
+
+            ```scheme
+            (chain (foo :bar "baz"))
+            ```
+
+            This will create a foo node,
+
+            The consequence of this is that you can't connect the input to anything else -- the implicit
+            node controls the value for the entire lifetime of the flow, not just initially. If you want to specify the
+            value only at startup, you will have to do this by using other types of nodes. <!-- This might seem tedious, but it made is a lot easier and understandable by using a subgraph template as explained below.
+
+            ## Subgraph Templates
+
+            TODO: implement and write this
+
+            ## Custom Features
+
+            -->
 
         </main>
 

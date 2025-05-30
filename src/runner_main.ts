@@ -31,7 +31,7 @@ try {
     if (nodes.length > 0) {
         app.run(nodes).catch(err => {
             console.error(err);
-            app.error(err);
+            app.error(err, -1);
         });
     } else {
         app.addUI("No nodes...");

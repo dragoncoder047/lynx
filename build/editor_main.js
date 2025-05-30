@@ -38001,18 +38001,19 @@ async function loadFromURL() {
   const params = new URLSearchParams(location.search);
   const url = params.get("url");
   if (!url) return;
+  var response;
   try {
-    const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
-    if (response.status === 404)
-      throw new Error(`"${url}" got a 404`);
-    const source = await response.text();
-    return {
-      source,
-      title: `Linked flow from ${url}`
-    };
+    response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
   } catch (_) {
-    throw new Error(`CORS blocked loading "${url}"`);
+    throw new Error(`"${url}" failed to fetch`);
   }
+  if (!response.ok)
+    throw new Error(`"${url}" got a ${response.status} (${response.statusText})`);
+  const source = await response.text();
+  return {
+    source,
+    title: `Linked flow from ${url}`
+  };
 }
 async function loadFromExample() {
   const params = new URLSearchParams(location.search);
@@ -38027,8 +38028,8 @@ async function loadFromExample() {
     title: `Example flow '${key}'`
   };
 }
-async function loadAutosaved() {
-  if (!localStorage[AUTOSAVE_KEY]) return;
+async function loadAutosaved(allowAutosaved) {
+  if (!allowAutosaved || !localStorage[AUTOSAVE_KEY]) return;
   return {
     source: await decompress(base64ToBytes(localStorage[AUTOSAVE_KEY])),
     title: "Autosaved"
@@ -38045,7 +38046,7 @@ async function autoloadString() {
   const errors = [];
   for (var [loader, name] of LOADERS) {
     try {
-      const val = await loader();
+      const val = await loader(true);
       if (val !== void 0 && errors.length === 0)
         return val.source.replace(/\n?$/, "\n");
     } catch (e75) {
@@ -38403,9 +38404,10 @@ function createNodes(app, forms) {
           errors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
           continue;
         }
-        if (rest.car instanceof Pair)
-          makeHON(app, rest);
-        else if (!METADATA_NAME_RE.test(rest.car.toString())) {
+        if (rest.car instanceof Pair) {
+          const res = defineSubgraphTemplate(app, rest);
+          errors.push(...res.errors);
+        } else if (!METADATA_NAME_RE.test(rest.car.toString())) {
           if (rest.cdr.car instanceof Pair)
             namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
           else errors.push(notValidHere(rest.cdr.car));
@@ -38444,8 +38446,8 @@ function createNodes(app, forms) {
   console.info(final);
   return createAndConnectNodes(final.realNodes, final.connections);
 }
-function makeHON(app, def) {
-  console.error(new RangeError("not implemented make HON"));
+function defineSubgraphTemplate(app, def) {
+  return { errors: [makePosError(`subgraph templates are not implemented`, def.car.car, LynxError.BAD_SYNTAX)] };
 }
 function makeNode(value) {
   return new NodeAsWritten(value.car, consToArray(value.cdr));

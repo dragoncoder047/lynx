@@ -93,8 +93,10 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
                     errors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
                     continue;
                 }
-                if (rest.car instanceof Pair)
-                    makeHON(app, rest);
+                if (rest.car instanceof Pair) {
+                    const res = defineSubgraphTemplate(app, rest);
+                    errors.push(...res.errors);
+                }
                 else if (!METADATA_NAME_RE.test(rest.car.toString())) {
                     if (rest.cdr.car instanceof Pair)
                         namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
@@ -132,8 +134,8 @@ export function createNodes(app: LynxFlow, forms: Pair[]): LynxNode[] {
     return createAndConnectNodes(final.realNodes, final.connections);
 }
 
-function makeHON(app: LynxFlow, def: any) {
-    console.error(new RangeError("not implemented make HON"));
+function defineSubgraphTemplate(app: LynxFlow, def: any) {
+    return { errors: [makePosError(`subgraph templates are not implemented`, def.car.car, LynxError.BAD_SYNTAX)] };
 }
 
 function makeNode(value: Pair): NodeAsWritten {

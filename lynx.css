@@ -193,7 +193,7 @@ td {
 
 /* layout stuff */
 
-#app :has(> :only-child) {
+#app :is(div, p, td) {
     padding: 0.5em;
 }
 

@@ -15561,9 +15561,10 @@ function createNodes(app2, forms) {
           errors.push(makePosError("Truncated definition", first, LynxError.BAD_SYNTAX));
           continue;
         }
-        if (rest.car instanceof Pair)
-          makeHON(app2, rest);
-        else if (!METADATA_NAME_RE.test(rest.car.toString())) {
+        if (rest.car instanceof Pair) {
+          const res = defineSubgraphTemplate(app2, rest);
+          errors.push(...res.errors);
+        } else if (!METADATA_NAME_RE.test(rest.car.toString())) {
           if (rest.cdr.car instanceof Pair)
             namedNodes[rest.car.toString()] = makeNode(rest.cdr.car);
           else errors.push(notValidHere(rest.cdr.car));
@@ -15602,8 +15603,8 @@ function createNodes(app2, forms) {
   console.info(final);
   return createAndConnectNodes(final.realNodes, final.connections);
 }
-function makeHON(app2, def) {
-  console.error(new RangeError("not implemented make HON"));
+function defineSubgraphTemplate(app2, def) {
+  return { errors: [makePosError(`subgraph templates are not implemented`, def.car.car, LynxError.BAD_SYNTAX)] };
 }
 function makeNode(value) {
   return new NodeAsWritten(value.car, consToArray(value.cdr));
@@ -16411,18 +16412,19 @@ async function loadFromURL() {
   const params = new URLSearchParams(location.search);
   const url = params.get("url");
   if (!url) return;
+  var response;
   try {
-    const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
-    if (response.status === 404)
-      throw new Error(`"${url}" got a 404`);
-    const source = await response.text();
-    return {
-      source,
-      title: `Linked flow from ${url}`
-    };
+    response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
   } catch (_) {
-    throw new Error(`CORS blocked loading "${url}"`);
+    throw new Error(`"${url}" failed to fetch`);
   }
+  if (!response.ok)
+    throw new Error(`"${url}" got a ${response.status} (${response.statusText})`);
+  const source = await response.text();
+  return {
+    source,
+    title: `Linked flow from ${url}`
+  };
 }
 async function loadFromExample() {
   const params = new URLSearchParams(location.search);
@@ -16437,8 +16439,8 @@ async function loadFromExample() {
     title: `Example flow '${key}'`
   };
 }
-async function loadAutosaved() {
-  if (!localStorage[AUTOSAVE_KEY]) return;
+async function loadAutosaved(allowAutosaved) {
+  if (!allowAutosaved || !localStorage[AUTOSAVE_KEY]) return;
   return {
     source: await decompress(base64ToBytes(localStorage[AUTOSAVE_KEY])),
     title: "Autosaved"
@@ -16455,18 +16457,21 @@ async function autoload(app2, nothingEl) {
   const errors = [];
   for (var [loader, name] of LOADERS) {
     try {
-      const val = await loader();
+      const val = await loader(false);
       if (val !== void 0 && errors.length === 0)
         return val;
     } catch (e75) {
       console.error(e75);
-      app2.error(name + ": " + e75);
-      errors.push(e75);
+      errors.push([e75, name]);
     }
   }
   if (errors.length === 0) {
     app2.addUI(nothingEl);
     app2.setTitle("Nothing to see here");
+  } else {
+    for (var [err, name] of errors) {
+      app2.error(name + ": " + err, -1);
+    }
   }
   throw "Stop.";
 }
@@ -16493,7 +16498,7 @@ try {
   if (nodes.length > 0) {
     app.run(nodes).catch((err) => {
       console.error(err);
-      app.error(err);
+      app.error(err, -1);
     });
   } else {
     app.addUI("No nodes...");

@@ -34,18 +34,19 @@ async function loadFromURL(): LoaderResult {
     const params = new URLSearchParams(location.search);
     const url = params.get("url");
     if (!url) return;
+    var response: Response;
     try {
-        const response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
-        if (response.status === 404)
-            throw new Error(`"${url}" got a 404`);
-        const source = await response.text();
-        return {
-            source,
-            title: `Linked flow from ${url}`
-        };
+        response = await fetch(url, { mode: "cors", cache: "reload", redirect: "follow" });
     } catch (_) {
-        throw new Error(`CORS blocked loading "${url}"`);
+        throw new Error(`"${url}" failed to fetch`);
     }
+    if (!response.ok)
+        throw new Error(`"${url}" got a ${response.status} (${response.statusText})`);
+    const source = await response.text();
+    return {
+        source,
+        title: `Linked flow from ${url}`
+    };
 }
 async function loadFromExample(): LoaderResult {
     const params = new URLSearchParams(location.search);
@@ -60,8 +61,8 @@ async function loadFromExample(): LoaderResult {
         title: `Example flow '${key}'`
     };
 }
-async function loadAutosaved(): LoaderResult {
-    if (!localStorage[AUTOSAVE_KEY]) return;
+async function loadAutosaved(allowAutosaved: boolean): LoaderResult {
+    if (!allowAutosaved || !localStorage[AUTOSAVE_KEY]) return;
     return {
         source: await decompress(base64ToBytes(localStorage[AUTOSAVE_KEY])),
         title: "Autosaved"
@@ -69,7 +70,7 @@ async function loadAutosaved(): LoaderResult {
 }
 
 
-const LOADERS: [() => LoaderResult, string][] = [
+const LOADERS: [(allowAutosave: boolean) => LoaderResult, string][] = [
     [loadFromHash, "share hash"],
     [loadFromLocalStorage, "save slot"],
     [loadFromURL, "external URL"],
@@ -77,30 +78,33 @@ const LOADERS: [() => LoaderResult, string][] = [
     [loadAutosaved, "autosaved app"]
 ];
 export async function autoload(app: LynxFlow, nothingEl: HTMLElement) {
-    const errors = [];
+    const errors: [any, string][] = [];
     for (var [loader, name] of LOADERS) {
         try {
-            const val = await loader();
+            const val = await loader(false);
             if (val !== undefined && errors.length === 0)
                 return val;
         } catch (e) {
             console.error(e);
-            app.error(name + ": " + e);
-            errors.push(e);
+            errors.push([e, name]);
         }
     }
     if (errors.length === 0) {
         app.addUI(nothingEl);
         app.setTitle("Nothing to see here");
+    } else {
+        for (var [err, name] of errors) {
+            app.error(name + ": " + err, -1);
+        }
     }
     throw "Stop.";
 }
 
 export async function autoloadString(): Promise<string> {
-    const errors = [];
+    const errors: string[] = [];
     for (var [loader, name] of LOADERS) {
         try {
-            const val = await loader();
+            const val = await loader(true);
             if (val !== undefined && errors.length === 0)
                 return val.source.replace(/\n?$/, "\n");
         } catch (e) {
