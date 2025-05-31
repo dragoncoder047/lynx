@@ -23,17 +23,6 @@
 * [X] Better error messages for nodes
     * [X] Node xxx has no input/output named :xxx
     * [X] Cannot determine variant to use
-* [X] Fix variant assignment algorithm
-    * [X] Process chains down to Node => NodeDef list variants map and \[Node, Node, symbol[]] list of links
-    * WFC algorithm
-        1. make map of node connection => any errors associated, and map of Node => NodeDef => template vars
-        2. loop over each node pair
-        3. loop through all possible variant combinations
-        4. check valid connections based on these
-        5. if any variants wound up with no valid connections generated remove them, add descriptive error message to errors map, and set changing to true
-        6. when no changes were made exit loop
-        7. find all the nodes that don't have only one possibility for variant and throw errors associated with them
-        8. otherwise assign the variants, make all the connections and voila.
 
 ## POSSIBLE NODES
 
